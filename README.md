@@ -23,6 +23,7 @@ docker compose build
 
 docker compose up
 ```
+it will take 1-2 min due to the initialization of Cassandra db
 
 Access the frontend at http://localhost:3000
 
