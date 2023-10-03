@@ -29,7 +29,9 @@ Access the frontend at http://localhost:3000
 
 Access the Cassandra db at localhost:9042, (no web interface provided, but can use http://localhost:5001/get_event to get table result)
 
-Access the Arango db at localhost:8529 default username: **root**, password: **123456**
+Access the Arango db at localhost:8529 default 
+username: **root**, 
+password: **123456**
 
 
 
