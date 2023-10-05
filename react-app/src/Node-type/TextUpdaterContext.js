@@ -9,6 +9,7 @@ export const TextUpdaterProvider = ({ children }) => {
     setInputText(text);
   };
 
+
   return (
     <TextUpdaterContext.Provider value={{ inputText, handleInputChange }}>
       {children}

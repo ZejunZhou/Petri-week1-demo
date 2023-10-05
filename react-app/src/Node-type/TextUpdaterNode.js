@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { Handle, Position } from 'reactflow';
 import styles from './inputnode.module.css';
-import { useTextUpdater } from "../TextUpdaterContext";
+import { useTextUpdater } from "./TextUpdaterContext";
 
 const handleStyle = { left: 10 };
 
@@ -27,7 +27,6 @@ function TextUpdaterNode({ data }) {
         />
       </div>
       <Handle type="source" position={Position.Bottom} id="a" />
-      <Handle type="source" position={Position.Bottom} id="b" style={handleStyle} />
     </div>
   );
 }
