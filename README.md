@@ -1,8 +1,3 @@
-# Petri Net Implementation with Cassandra and ArangoDB
-
-## Documentation update
-- Rev. 1.0 <2023-09-28>
-
 ## Installation Requirements
 - Docker & Docker Compose.
 
