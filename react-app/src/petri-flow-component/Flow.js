@@ -5,6 +5,9 @@ import TextUpdaterNode from '../Node-type/TextUpdaterNode';
 import {useTextUpdater } from '../Node-type/TextUpdaterContext';
 import PlaceNode from "../Node-type/PlaceNode";
 import TransitionNode from "../Node-type/TransitionNode";
+import Navbar from "../navbar-component/navbar";
+import LeftSidebar from "../navbar-component/leftsidebar";
+import RightSidebar from "../navbar-component/rightsidebar";
 import axios from 'axios';
 
 const rfStyle = {
@@ -48,12 +51,40 @@ function Flow({userInfo}) {
   const [nodes, setNodes, onNodesChange] = useNodesState(barborNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [userImage, setUserImage] = useState(null);
+  const [selectedNode, setSelectedNode] = useState(null);
 
   const onConnect = useCallback((params) => {
       const newEdge = {...params, animated: true };
       setEdges((eds) => addEdge(newEdge, eds));
       saveEdgeToDB(newEdge, userInfo.email);
   },[setEdges]);
+
+  
+  const onNodeClick = (event, node) => {
+        setSelectedNode({
+            id: node.id,
+            backgroundColor: node.style?.backgroundColor || 'white'
+        });
+    };
+
+  
+  const onNodeDragStop = (event, node) => {
+        saveNodeToDB(node, userInfo.email)
+  }
+
+
+  const handleColorChange = (event) => {
+        const newColor = event.target.value;
+        setNodes(prevNodes => 
+            prevNodes.map(el => 
+                el.id === selectedNode.id 
+                    ? { ...el, style: { ...el.style, backgroundColor: newColor } } 
+                    : el
+            )
+        );
+        setSelectedNode(prev => ({ ...prev, backgroundColor: newColor }));
+    };
+
 
   const [redNodeId, setRedNodeId] = useState(null);
 
@@ -190,34 +221,40 @@ function Flow({userInfo}) {
     fetchImage();
 }, [userInfo.email]);
 
-  console.log(nodes)
-  console.log(edges)
+  // console.log(nodes)
+  // console.log(edges)
 
   return (
     <div>
-      <div style={{ width: '100%', height: '100vh' }}>
-        <h1>Hello, {userInfo.email}, Your name is {userInfo.name.toLowerCase()}</h1>
-        {userImage ? <img src={userImage} alt="user-profile" /> : <img src="https://ulsum.com/static/img/unlogin-icon.ce0192e1.png" alt="user-image" />}
-        <button onClick={handleRunning}>Start Running</button>
-        <button onClick={addPlaceNode}>Add Place Node</button>
-        <button onClick={addTransitionNode}>Add Transition Node</button>
-        <ReactFlow
-          nodes={nodes.map(node => ({
-            ...node,
-            style: node.id === redNodeId ? nodeStylebusy : nodeStylefree,
-          }))}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          style={rfStyle}
-        >
-          <Controls />
-          <MiniMap />
-          <Background variant="dots" gap={12} size={2} />
-        </ReactFlow>
-        <h1>this is the end</h1>
+      <Navbar userImage={userImage}/>
+      <div className="d-flex">
+        <div className="flex-column flex-shrink-0" style={{ width: '13%'}}>
+          <LeftSidebar selectedNode={selectedNode} handleColorChange={handleColorChange}/>
+        </div>
+        <div className="flex-grow-1" style={{ height: '90vh' }}>
+          {/* <h1>Hello, {userInfo.email}, Your name is {userInfo.name.toLowerCase()}</h1> */}
+          <button onClick={handleRunning}>Start Running</button>
+          <button onClick={addPlaceNode}>Add Place Node</button>
+          <button onClick={addTransitionNode}>Add Transition Node</button>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            nodeTypes={nodeTypes}
+            style={rfStyle}
+            onNodeClick={onNodeClick}
+            onNodeDragStop={onNodeDragStop}
+          >
+            <Controls />
+            <MiniMap />
+            <Background variant="dots" gap={12} size={2} />
+          </ReactFlow>
+        </div>
+        <div className="flex-column flex-shrink-0" style={{ width: '13%' }}>
+          <RightSidebar/>
+        </div>
       </div>
     </div>
   );
