@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - 3000:3000
+    volumes:
+      - ./react-app:/app/react-app
     networks:
       - mynetwork
 

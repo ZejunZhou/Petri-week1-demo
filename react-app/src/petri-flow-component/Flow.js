@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useContext } from "react";
+import React, { useCallback, useEffect, useState, useContext, useRef } from "react";
 import 'reactflow/dist/style.css';
 import ReactFlow, { MiniMap, Controls, Background, useNodesState, useEdgesState, addEdge} from 'reactflow';
 import TextUpdaterNode from '../Node-type/TextUpdaterNode';
@@ -8,6 +8,7 @@ import TransitionNode from "../Node-type/TransitionNode";
 import Navbar from "../navbar-component/navbar";
 import LeftSidebar from "../navbar-component/leftsidebar";
 import RightSidebar from "../navbar-component/rightsidebar";
+import throttle from 'lodash/throttle';
 import axios from 'axios';
 
 const rfStyle = {
@@ -61,87 +62,95 @@ function Flow({userInfo}) {
 
   
   const onNodeClick = (event, node) => {
-        setSelectedNode({
-            id: node.id,
-            backgroundColor: node.style?.backgroundColor || 'white'
+    setSelectedNode(node);
+};
+
+  //console.log(selectedNode)
+
+  const onPaneClick = (event) => {
+    if (selectedNode) {
+      saveNodeToDB(selectedNode, userInfo.email)
+    }
+    setSelectedNode(null);
+  };
+
+  const onNodesDelete = async (nodesToDelete) => {
+    try {
+        nodesToDelete.forEach(async (node) => {
+            const response = await deleteNodeFromDB(node.id, userInfo.email);
+            if (response.status === 200) {
+                // console.log(`Node ${node.id} deleted successfully.`);
+                setNodes(prevNodes => prevNodes.filter(n => n.id !== node.id));
+                if (selectedNode) {
+                  setSelectedNode(null);
+                }
+                return;
+            } else {
+                // console.error(`Error during the deletion of node ${node.id}:`, response.data.message);
+            }
         });
-    };
+    } catch (error) {
+        console.error('db error occurred while deleting nodes:', error);
+    }
+  };
+
+
+  const onNodeDragStop = (event, node) => {
+      saveNodeToDB(node, userInfo.email)
+      setSelectedNode(node);
+   }
 
   
-  const onNodeDragStop = (event, node) => {
-        saveNodeToDB(node, userInfo.email)
-  }
-
-
-  const handleColorChange = (event) => {
-        const newColor = event.target.value;
-        setNodes(prevNodes => 
-            prevNodes.map(el => 
-                el.id === selectedNode.id 
-                    ? { ...el, style: { ...el.style, backgroundColor: newColor } } 
-                    : el
-            )
-        );
-        setSelectedNode(prev => ({ ...prev, backgroundColor: newColor }));
-    };
-
-
-  const [redNodeId, setRedNodeId] = useState(null);
-
-   const sendDataToCassandra = async (customerName, currentLabel, previousLabel) => {
-    try {
-      await axios.post('http://localhost:5001/create_event', {
-        customer_email: userInfo.email,
-        customer_name: String(userInfo.name).toLowerCase(),
-        current_node_label: currentLabel,
-        previous_node_label: previousLabel,
-      });
-    } catch (error) {
-      console.error('Error sending data to server:', error);
-    }
-  };
-
-
-  const changeNodeColors = useCallback(() => {
-  let index = 0;
-  const changeColor = () => {
-    if (index < initialEdges.length) {
-      let previous_node_label = index === 0 ? null : initialEdges[index - 1].source;
-      let current_node_label = initialEdges[index].source;
-      
-      sendDataToCassandra(inputText, current_node_label, previous_node_label || 'start node');
-      
-      setRedNodeId(initialEdges[index].target);
-      index += 1;
-      if (index < initialEdges.length) {
-        setTimeout(changeColor, 1000);
-      }
-    }
-  };
-  changeColor();
-}, [inputText]);
-
-  // useEffect(() => {
-  //   if (inputText) {
-  //     changeNodeColors(inputText);
-  //   }
-  // }, [inputText]);
-
-
-  const handleRunning = (inputText) => {
-    if (inputText){
-      changeNodeColors(inputText);
-    }
-  }
+  const throttledSaveNodeToDB = useRef(throttle((node, email) => {
+    saveNodeToDB(node, email);
+  }, 500)).current;
 
 
   const saveNodeToDB = async (node, email) => {
-  try {
-    await axios.post('http://localhost:5001/insert_nodes', {...node, customer_email:email});
-  } catch (error) {
-    console.error('Error saving node:', error);
-  }
-};
+    try {
+      await axios.post('http://localhost:5001/insert_nodes', {...node, customer_email:email});
+    } catch (error) {
+      console.error('Error saving node:', error);
+    }
+  };
+
+  const deleteNodeFromDB = async (nodeId, email) => {
+    //console.log(nodeId, email);
+    try {
+        const response = await axios.delete('http://localhost:5001/delete_node', {params: {id:nodeId, customer_email:email}});
+        return response;
+    } catch (error) {
+        console.error('Error during the node deletion:', error);
+        return error.response;
+    }
+  };
+
+
+  const handleColorChange = (event) => {
+    const newColor = event.target.value;
+    setNodes(prevNodes => {
+        const updatedNodes = prevNodes.map(el => 
+            el.id === selectedNode.id 
+                ? { ...el, style: { ...el.style, backgroundColor: newColor } } 
+                : el
+        );
+        // Find the updated node
+        const nodeToUpdate = updatedNodes.find(n => n.id === selectedNode.id);
+        if (nodeToUpdate) {
+            throttledSaveNodeToDB(nodeToUpdate, userInfo.email); // delay save to database
+        }
+        return updatedNodes; // return updated nodes state
+    });
+    setSelectedNode(prev => ({
+    ...prev, 
+    style: { 
+        ...prev.style, 
+        backgroundColor: newColor 
+    }
+    }));
+    // console.log(selectedNode, newColor)
+ };
+
 
   const saveEdgeToDB = async (edge, email) => {
     try {
@@ -159,14 +168,37 @@ function Flow({userInfo}) {
     );
  };
 
+ const handleAddToken = (color, pairs) => {
+    if (!selectedNode) return;
+    setNodes(prevNodes => {
+        const updatedNodes = prevNodes.map(node => {
+            if (node.id === selectedNode.id) {
+                const newToken = pairs.reduce((acc, pair) => {
+                    acc[pair.key] = pair.value;
+                    return acc;
+                }, { color });
+
+                return {
+                    ...node,
+                    data: {
+                        ...node.data,
+                        tokens: [...node.data.tokens, newToken],
+                    },
+                };
+            }
+            return node;
+        });
+        return updatedNodes;
+    });
+};
 
   const addPlaceNode = () => {
     const newNode = {
       id: 'place' + (nodes.length + 1),
       type: 'place',
       position: { x: 100, y: 100 },
-      data: { label: 'Place Node', updateLabel },
-      style: nodeStylefree
+      data: { label: 'Place Node', tokens: [{color:'red'}, {color:'red'}], updateLabel},
+      style: nodeStylefree,
     };
     setNodes(nodes => [...nodes, newNode]);
     saveNodeToDB(newNode, userInfo.email);
@@ -177,8 +209,8 @@ function Flow({userInfo}) {
         id: 'transition' + (nodes.length + 1),
         type: 'transition',
         position: { x: 200, y: 100 },
-        data: { label: 'Transition Node', updateLabel},
-        style: nodeStylefree
+        data: { label: 'Transition Node', tokens:[], updateLabel},
+        style: nodeStylefree,
       };
       setNodes(nodes => [...nodes, newNode]);
       saveNodeToDB(newNode, userInfo.email);
@@ -190,6 +222,7 @@ function Flow({userInfo}) {
           const nodesResponse = await axios.get('http://localhost:5001/get_nodes', { params: {email: userInfo.email}});
           const edgesResponse = await axios.get('http://localhost:5001/get_edges', { params: {email: userInfo.email}});
           
+          //console.log(nodesResponse.data)
           const updatedNodes = nodesResponse.data.map(node => ({
               ...node,
               data: {
@@ -213,27 +246,29 @@ function Flow({userInfo}) {
         setUserImage(response.data);
       }
     } catch (error) {
+      const response = await axios.get('https://ulsum.com/static/img/unlogin-icon.ce0192e1.png');
+      setUserImage(response.data);
       console.error('Error fetching image:', error);
     }
   }
-
-    fetchData();
     fetchImage();
+    fetchData();
 }, [userInfo.email]);
 
-  // console.log(nodes)
-  // console.log(edges)
+  const nodeColor = (node) => {
+    return node.style && node.style.backgroundColor ? node.style.backgroundColor : '#eeeee2';
+  };
 
   return (
     <div>
       <Navbar userImage={userImage}/>
       <div className="d-flex">
         <div className="flex-column flex-shrink-0" style={{ width: '13%'}}>
-          <LeftSidebar selectedNode={selectedNode} handleColorChange={handleColorChange}/>
+          <LeftSidebar selectedNode={selectedNode} handleColorChange={handleColorChange} handleAddToken={handleAddToken}/>
         </div>
         <div className="flex-grow-1" style={{ height: '90vh' }}>
           {/* <h1>Hello, {userInfo.email}, Your name is {userInfo.name.toLowerCase()}</h1> */}
-          <button onClick={handleRunning}>Start Running</button>
+          {/* <button onClick={handleRunning}>Start Running</button> */}
           <button onClick={addPlaceNode}>Add Place Node</button>
           <button onClick={addTransitionNode}>Add Transition Node</button>
           <ReactFlow
@@ -246,14 +281,16 @@ function Flow({userInfo}) {
             style={rfStyle}
             onNodeClick={onNodeClick}
             onNodeDragStop={onNodeDragStop}
+            onNodesDelete={onNodesDelete}
+            onPaneClick={onPaneClick}
           >
             <Controls />
-            <MiniMap />
+            <MiniMap zoomable pannable nodeColor={nodeColor}/>
             <Background variant="dots" gap={12} size={2} />
           </ReactFlow>
         </div>
         <div className="flex-column flex-shrink-0" style={{ width: '13%' }}>
-          <RightSidebar/>
+          <RightSidebar selectedNode={selectedNode}/>
         </div>
       </div>
     </div>

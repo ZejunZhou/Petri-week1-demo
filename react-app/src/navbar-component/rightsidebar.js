@@ -1,12 +1,47 @@
 import React from 'react';
 
-const RightSidebar = () => {
+const RightSidebar = ({selectedNode}) => {
+    const calculateColorCounts = (tokens) => {
+        const colorCounts = {};
+
+        tokens.forEach(token => {
+        if (colorCounts[token.color]) {
+            colorCounts[token.color] += 1;
+        } else {
+            colorCounts[token.color] = 1;
+        }
+        });
+
+        return colorCounts;
+    };
+
+    const renderColorCounts = () => {
+        if (selectedNode && selectedNode.data.tokens) {
+            const colorCounts = calculateColorCounts(selectedNode.data.tokens);
+            
+            return Object.entries(colorCounts).map(([color, count], index) => (
+                <li key={index}>
+                    {color}:{count}
+                </li>
+            ));
+        }
+        return <p>No token</p>;
+    };
+
+
     return (
         <div className="d-flex flex-column h-100">
-
             <div className="bg-light p-3 border">
                 <h5>Token</h5>
-
+                {selectedNode && selectedNode.data.tokens && (
+                    selectedNode.data.tokens.length > 0 ? (
+                        <ul>
+                           {renderColorCounts()}
+                        </ul>
+                    ) : (
+                        <p>No token</p>
+                    )
+                )}
             </div>
 
             <div className="bg-light p-3 border flex-fill">
@@ -15,8 +50,16 @@ const RightSidebar = () => {
             </div>
 
             <div className="bg-light p-3 border">
-                <h5>Stroke</h5>
-            
+                <h5>Position</h5>
+                {selectedNode && selectedNode.position && <div>
+                    <p>x : {selectedNode.position.x}</p>
+                    <p>y : {selectedNode.position.y}</p>
+                    </div>}
+            </div>
+
+            <div className="bg-light p-3 border">
+                <h5>label</h5>
+            {selectedNode && selectedNode.data.label && <p>{selectedNode.data.label}</p>}
             </div>
 
             <div className="bg-light p-3 border">
@@ -26,6 +69,7 @@ const RightSidebar = () => {
 
             <div className="bg-light p-3 border">
                 <h5>Type</h5>
+                 {selectedNode && selectedNode.type && <p>{selectedNode.type}</p>}
             
             </div>
         </div>
