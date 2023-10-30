@@ -45,30 +45,30 @@ const LeftSidebar = ({ selectedNode, handleColorChange, handleAddToken}) => {
                 />
             </div>
 
-            {selectedNode && <div className="bg-light p-3 border">
-                <h5>Create Token</h5>
+            {selectedNode && selectedNode.type === 'place' && <div className="bg-light p-3 border">
+                {selectedNode.type === 'place' ? <h5>Create Token</h5> : <h5>Set Transition</h5>}
                 <input type="color" value={tokenColor} onChange={(e) => setTokenColor(e.target.value)} />
 
                 {tokenPairs.map((pair, index) => (
                     <div key={index}>
                         <input
                             type="text"
-                            placeholder="Key"
+                            placeholder='key'
                             value={pair.key}
                             onChange={(e) => handlePairChange(index, 'key', e.target.value)}
                         />
                         <input
                             type="text"
-                            placeholder="Value"
+                            placeholder="value"
                             value={pair.value}
                             onChange={(e) => handlePairChange(index, 'value', e.target.value)}
                         />
-                        <button onClick={() => removePair(index)}>Remove</button>
+                        <button className={`btn btn-sm btn-outline-dark`} onClick={() => removePair(index)}>Remove</button>
                     </div>
                 ))}
                 
-                <button onClick={addPair}>Add More</button>
-                <button onClick={handleSubmit}>Submit</button>
+                <button className={`btn btn-sm btn-outline-dark`} onClick={addPair}>Add More</button>
+                <button className={`btn btn-sm btn-outline-dark`} onClick={handleSubmit}>Submit</button>
              </div>}
 
             <div className="bg-light p-3 border">

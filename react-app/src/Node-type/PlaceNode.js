@@ -8,8 +8,8 @@ function Token({ color }) {
       border: '1px solid',
       borderColor: color,
       borderRadius: '50%',
-      width: '30px',
-      height: '30px',
+      width: '15px',
+      height: '15px',
       textAlign: 'center',
       lineHeight: '30px', 
       margin: '5px',
@@ -42,6 +42,7 @@ function PlaceNode({ data, id, isConnectable, selected }) {
           position={Position.Bottom}
           onConnect={(params) => console.log('handle onConnect', params)}
           isConnectable={isConnectable}
+          style={{ background: 'red'}}
         />
         <div>
           {/* <p>{data.label}</p> */}

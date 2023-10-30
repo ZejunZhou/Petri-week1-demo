@@ -32,7 +32,8 @@ const RightSidebar = ({selectedNode}) => {
     return (
         <div className="d-flex flex-column h-100">
             <div className="bg-light p-3 border">
-                <h5>Token</h5>
+                {selectedNode && selectedNode.type == 'place' && <h5>Token</h5>}
+                {selectedNode && selectedNode.type == 'transition' && <h5>Transition</h5>}
                 {selectedNode && selectedNode.data.tokens && (
                     selectedNode.data.tokens.length > 0 ? (
                         <ul>
@@ -42,6 +43,12 @@ const RightSidebar = ({selectedNode}) => {
                         <p>No token</p>
                     )
                 )}
+            </div>
+
+            <div className="bg-light p-3 border flex-fill">
+                <h5>Node ID</h5>
+                {selectedNode && <p>{selectedNode.id}</p>}
+                
             </div>
 
             <div className="bg-light p-3 border flex-fill">

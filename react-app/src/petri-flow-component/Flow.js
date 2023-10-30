@@ -24,26 +24,25 @@ const nodeStylebusy = {
 }
 
 const barborNodes = [
-  { id: 'customer', position: { x: 0, y: 0 }, type: 'textUpdater', data: { label: 'customer' } },
-  { id: 'enter', position: { x: 0, y: 300 }, data: { label: 'enter' }, style: nodeStylefree },
-  { id: 'waiting', position: { x: 200, y: 300 }, data: { label: 'waiting' }, style: nodeStylefree },
-  { id: 'serve', position: { x: 400, y: 300 }, data: { label: 'serve' }, style: nodeStylefree },
-  { id: 'busy', position: { x: 500, y: 200 }, data: { label: 'busy' }, style: nodeStylefree },
-  { id: 'done', position: { x: 600, y: 300 }, data: { label: 'done' }, style: nodeStylefree },
-  { id: 'idle', position: { x: 500, y: 400 }, data: { label: 'idle' }, style: nodeStylefree },
-  { id: 'end', position: { x: 600, y: 600 }, data: { label: 'end' }, style: nodeStylefree },
+  // { id: 'enter', position: { x: 0, y: 300 }, data: { label: 'enter' }, style: nodeStylefree },
+  // { id: 'waiting', position: { x: 200, y: 300 }, data: { label: 'waiting' }, style: nodeStylefree },
+  // { id: 'serve', position: { x: 400, y: 300 }, data: { label: 'serve' }, style: nodeStylefree },
+  // { id: 'busy', position: { x: 500, y: 200 }, data: { label: 'busy' }, style: nodeStylefree },
+  // { id: 'done', position: { x: 600, y: 300 }, data: { label: 'done' }, style: nodeStylefree },
+  // { id: 'idle', position: { x: 500, y: 400 }, data: { label: 'idle' }, style: nodeStylefree },
+  // { id: 'end', position: { x: 600, y: 600 }, data: { label: 'end' }, style: nodeStylefree },
 ];
 
 const nodeTypes = { textUpdater: TextUpdaterNode, place:PlaceNode, transition:TransitionNode};
 
 const initialEdges = [
-  { id: 'customer-enter', source: 'customer', target: 'enter', animated: true },
-  { id: 'enter-waiting', source: 'enter', target: 'waiting', animated: true },
-  { id: 'waiting-serve', source: 'waiting', target: 'serve', animated: true },
-  { id: 'serve-busy', source: 'serve', target: 'busy', animated: true },
-  { id: 'busy-done', source: 'busy', target: 'done', animated: true },
-  { id: 'done-idle', source: 'done', target: 'idle', animated: true },
-  { id: 'idle', source: 'idle', target: 'end', animated: true },
+  // { id: 'customer-enter', source: 'customer', target: 'enter', animated: true },
+  // { id: 'enter-waiting', source: 'enter', target: 'waiting', animated: true },
+  // { id: 'waiting-serve', source: 'waiting', target: 'serve', animated: true },
+  // { id: 'serve-busy', source: 'serve', target: 'busy', animated: true },
+  // { id: 'busy-done', source: 'busy', target: 'done', animated: true },
+  // { id: 'done-idle', source: 'done', target: 'idle', animated: true },
+  // { id: 'idle', source: 'idle', target: 'end', animated: true },
 ];
 
 function Flow({userInfo}) {
@@ -53,6 +52,8 @@ function Flow({userInfo}) {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [userImage, setUserImage] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
+  const [startNodeId, setStartNodeId] = useState("");
+  const [endNodeId, setEndNodeId] = useState("");
 
   const onConnect = useCallback((params) => {
       const newEdge = {...params, animated: true };
@@ -178,13 +179,15 @@ function Flow({userInfo}) {
                     return acc;
                 }, { color });
 
-                return {
+                let updateNode = {
                     ...node,
                     data: {
                         ...node.data,
                         tokens: [...node.data.tokens, newToken],
                     },
                 };
+                saveNodeToDB(updateNode, userInfo.email)
+                return updateNode
             }
             return node;
         });
@@ -209,7 +212,7 @@ function Flow({userInfo}) {
         id: 'transition' + (nodes.length + 1),
         type: 'transition',
         position: { x: 200, y: 100 },
-        data: { label: 'Transition Node', tokens:[], updateLabel},
+        data: { label: 'this is a test {red:1}', tokens:[], updateLabel},
         style: nodeStylefree,
       };
       setNodes(nodes => [...nodes, newNode]);
@@ -222,20 +225,33 @@ function Flow({userInfo}) {
           const nodesResponse = await axios.get('http://localhost:5001/get_nodes', { params: {email: userInfo.email}});
           const edgesResponse = await axios.get('http://localhost:5001/get_edges', { params: {email: userInfo.email}});
           
-          //console.log(nodesResponse.data)
-          const updatedNodes = nodesResponse.data.map(node => ({
-              ...node,
-              data: {
-                  ...node.data,
-                  updateLabel,
-              },
-          }));
+          let updatedNodes = [];
+          for (const node of nodesResponse.data) {
+              if (!nodes.some(prevNode => prevNode.id === node.id)) {
+                  updatedNodes.push({
+                      ...node,
+                      data: {
+                          ...node.data,
+                          updateLabel,
+                      },
+                  });
+              }
+          }
+
+          let updatedEdges = [];
+          for (const edge of edgesResponse.data) {
+              if (!edges.some(prevEdge => prevEdge.id === edge.id)) {
+                  updatedEdges.push(edge);
+              }
+          }
+
           setNodes((prevNodes) => prevNodes.concat(updatedNodes));
-          setEdges((prevEdges) => prevEdges.concat(edgesResponse.data));
+          setEdges((prevEdges) => prevEdges.concat(updatedEdges));
       } catch (error) {
           console.error('Error fetching data:', error);
       }
   };
+
 
    const fetchImage = async() => {
     try {
@@ -259,6 +275,83 @@ function Flow({userInfo}) {
     return node.style && node.style.backgroundColor ? node.style.backgroundColor : '#eeeee2';
   };
 
+  
+  const runSimulation = () => {
+    const path = findPath(edges, startNodeId, endNodeId);
+    if (path) {
+        moveTokensAlongPath(path, nodes, setNodes);
+    } else {
+        alert(`no path found between ${startNodeId} and ${endNodeId}`)
+    }
+  };
+
+
+  const findPath = (edges, startNodeId, endNodeId) => {
+    const findPathRecursive = (currentNodeId, visitedNodes) => {
+        if (currentNodeId === endNodeId) { // check if reach out the end of the target
+            return [currentNodeId];
+        }
+        visitedNodes.add(currentNodeId); // mark as visited
+        const childrenEdges = edges.filter(edge => edge.source === currentNodeId); // use edges to find all neighbor nodes
+        for (const childEdge of childrenEdges) {
+            if (!visitedNodes.has(childEdge.target)) { // if not visited 
+                const path = findPathRecursive(childEdge.target, visitedNodes); // DFS recursion
+                if (path) {
+                    return [currentNodeId, ...path];
+                }
+            }
+        }
+        visitedNodes.delete(currentNodeId);
+        return null;
+    };
+    return findPathRecursive(startNodeId, new Set());
+ };
+
+ 
+ const moveTokensAlongPath = (path, nodes, setNodes) => {
+    let delay = 1000;
+    for (let i = 0; i < path.length - 1; i++) {
+        setTimeout(() => {
+            const sourceNode = nodes.find(node => node.id === path[i]);
+            const targetNode = nodes.find(node => node.id === path[i+1]);
+            if (sourceNode && targetNode && sourceNode.data.tokens.length > -1) {
+                if (sourceNode.type === 'transition') {
+                    const consumePattern = /\{([^}]+)\}/; // Regular expression to find the {} pattern in the label
+                    const match = consumePattern.exec(sourceNode.data.label);
+                    if (match) {
+                        const [color, number] = match[1].split(':'); // Extract color and number
+                        let consumeNumber = parseInt(number, 10);
+                        // Filter the tokens based on the specified color and ensure there are enough tokens to consume
+                        let tokensToConsume = sourceNode.data.tokens.filter(token => token.color === color);
+                        if (tokensToConsume.length < consumeNumber) {
+                            alert('Not enough tokens to consume.');
+                            return;
+                        }
+                        // Consume the tokens
+                        console.log(sourceNode.data.tokens, consumeNumber)
+                        sourceNode.data.tokens = sourceNode.data.tokens.filter(token => {
+                            if (token.color === color && consumeNumber > 0) {
+                                consumeNumber--; 
+                                return false; 
+                            }
+                            return true;
+                        });
+                        console.log(sourceNode.data.tokens, consumeNumber)
+                    }
+                }
+                targetNode.data.tokens = targetNode.data.tokens.concat(sourceNode.data.tokens);
+                sourceNode.data.tokens = [];
+                setNodes([...nodes]);
+            }
+        }, delay);
+        delay += 1000;
+    }
+};
+
+
+
+
+
   return (
     <div>
       <Navbar userImage={userImage}/>
@@ -269,8 +362,21 @@ function Flow({userInfo}) {
         <div className="flex-grow-1" style={{ height: '90vh' }}>
           {/* <h1>Hello, {userInfo.email}, Your name is {userInfo.name.toLowerCase()}</h1> */}
           {/* <button onClick={handleRunning}>Start Running</button> */}
-          <button onClick={addPlaceNode}>Add Place Node</button>
-          <button onClick={addTransitionNode}>Add Transition Node</button>
+          <button className={`btn btn-outline-dark`} onClick={addPlaceNode}>Add Place Node</button>
+          <button className={`btn btn-outline-dark`} onClick={addTransitionNode}>Add Transition Node</button>
+          <button className={`btn btn-outline-dark`} onClick={runSimulation}>Run Simulation</button>
+          <input 
+              type="text" 
+              value={startNodeId} 
+              onChange={(e) => setStartNodeId(e.target.value)} 
+              placeholder="Start Node ID"
+          />
+          <input 
+              type="text" 
+              value={endNodeId} 
+              onChange={(e) => setEndNodeId(e.target.value)} 
+              placeholder="End Node ID"
+          />
           <ReactFlow
             nodes={nodes}
             edges={edges}

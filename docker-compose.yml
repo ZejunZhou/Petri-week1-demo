@@ -37,6 +37,16 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  ngrok: 
+    image: ngrok/ngrok
+    ports:
+      - 4040:4040
+    command: http react-frontend:3000
+    environment:
+      - NGROK_AUTHTOKEN=2WMJ2Zs4liHTnWFzRRmwaq1i6f8_5K5VPMmFraecfNgxetAR9
+    networks:
+      - mynetwork
         
   arangodb:
     image: arangodb/arangodb
