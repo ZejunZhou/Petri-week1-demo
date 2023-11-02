@@ -52,14 +52,21 @@ function Flow({userInfo}) {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [userImage, setUserImage] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
-  const [startNodeId, setStartNodeId] = useState("");
-  const [endNodeId, setEndNodeId] = useState("");
+  const [step, setStep] = useState(0);
 
   const onConnect = useCallback((params) => {
-      const newEdge = {...params, animated: true };
-      setEdges((eds) => addEdge(newEdge, eds));
-      saveEdgeToDB(newEdge, userInfo.email);
-  },[setEdges]);
+    const sourceNode = nodes.find(node => node.id === params.source);
+    const targetNode = nodes.find(node => node.id === params.target);
+    if (sourceNode && targetNode && 
+        ((sourceNode.type === 'place' && targetNode.type === 'transition') || 
+         (sourceNode.type === 'transition' && targetNode.type === 'place'))) {
+        const newEdge = {...params, animated: true };
+        setEdges((eds) => addEdge(newEdge, eds));
+        saveEdgeToDB(newEdge, userInfo.email);
+    } else {
+        alert('You Can Only Connect Place node to Transition Node');
+    }
+  }, [nodes, setEdges]);
 
   
   const onNodeClick = (event, node) => {
@@ -276,81 +283,93 @@ function Flow({userInfo}) {
   };
 
   
-  const runSimulation = () => {
-    const path = findPath(edges, startNodeId, endNodeId);
-    if (path) {
-        moveTokensAlongPath(path, nodes, setNodes);
-    } else {
-        alert(`no path found between ${startNodeId} and ${endNodeId}`)
-    }
-  };
-
-
-  const findPath = (edges, startNodeId, endNodeId) => {
-    const findPathRecursive = (currentNodeId, visitedNodes) => {
-        if (currentNodeId === endNodeId) { // check if reach out the end of the target
-            return [currentNodeId];
-        }
-        visitedNodes.add(currentNodeId); // mark as visited
-        const childrenEdges = edges.filter(edge => edge.source === currentNodeId); // use edges to find all neighbor nodes
-        for (const childEdge of childrenEdges) {
-            if (!visitedNodes.has(childEdge.target)) { // if not visited 
-                const path = findPathRecursive(childEdge.target, visitedNodes); // DFS recursion
-                if (path) {
-                    return [currentNodeId, ...path];
-                }
-            }
-        }
-        visitedNodes.delete(currentNodeId);
-        return null;
-    };
-    return findPathRecursive(startNodeId, new Set());
- };
-
- 
- const moveTokensAlongPath = (path, nodes, setNodes) => {
+const runSimulation = () => {
     let delay = 1000;
-    for (let i = 0; i < path.length - 1; i++) {
+    const transitions = nodes.filter(node => node.type === 'transition'); 
+
+    for (let step = 0; step < getMaxSteps(); step++) { 
         setTimeout(() => {
-            const sourceNode = nodes.find(node => node.id === path[i]);
-            const targetNode = nodes.find(node => node.id === path[i+1]);
-            if (sourceNode && targetNode && sourceNode.data.tokens.length > -1) {
-                if (sourceNode.type === 'transition') {
-                    const consumePattern = /\{([^}]+)\}/; // Regular expression to find the {} pattern in the label
-                    const match = consumePattern.exec(sourceNode.data.label);
-                    if (match) {
-                        const [color, number] = match[1].split(':'); // Extract color and number
-                        let consumeNumber = parseInt(number, 10);
-                        // Filter the tokens based on the specified color and ensure there are enough tokens to consume
-                        let tokensToConsume = sourceNode.data.tokens.filter(token => token.color === color);
-                        if (tokensToConsume.length < consumeNumber) {
-                            alert('Not enough tokens to consume.');
-                            return;
+            transitions.forEach(transitionNode => {
+                const incomingEdges = edges.filter(edge => edge.target === transitionNode.id); 
+                
+                const canFire = incomingEdges.every(edge => {
+                    transitionNode.style.backgroundColor = "#B0D9B1"
+                    const sourceNode = nodes.find(node => node.id === edge.source);
+                    return sourceNode && hasEnoughTokens(transitionNode, sourceNode);
+                });
+
+                if (canFire && incomingEdges.length > 0) {
+                    incomingEdges.forEach(edge => {
+                        const sourceNode = nodes.find(node => node.id === edge.source); 
+                        if (sourceNode) {
+                            consumeTokens(transitionNode, sourceNode);
                         }
-                        // Consume the tokens
-                        console.log(sourceNode.data.tokens, consumeNumber)
-                        sourceNode.data.tokens = sourceNode.data.tokens.filter(token => {
-                            if (token.color === color && consumeNumber > 0) {
-                                consumeNumber--; 
-                                return false; 
-                            }
-                            return true;
-                        });
-                        console.log(sourceNode.data.tokens, consumeNumber)
-                    }
+                    });
+                    produceTokens(transitionNode); 
+                } else{
+                    alert(transitionNode.id + " cant be fired")
                 }
-                targetNode.data.tokens = targetNode.data.tokens.concat(sourceNode.data.tokens);
-                sourceNode.data.tokens = [];
-                setNodes([...nodes]);
-            }
+                
+            });
+            setNodes([...nodes]); 
         }, delay);
         delay += 1000;
     }
 };
 
 
+const hasEnoughTokens = (transitionNode, sourceNode) => {
+    const consumePattern = /\{([^}]+)\}/;
+    const match = consumePattern.exec(transitionNode.data.label);
+    if (match) {
+        const [color, number] = match[1].split(':');
+        let requiredTokens = parseInt(number, 10);
+        let availableTokens = sourceNode.data.tokens.filter(token => token.color === color).length;
+        return availableTokens >= requiredTokens;
+    }
+    return false;
+};
 
+const getMaxSteps = () => {
+    return step
+};
 
+const consumeTokens = (transitionNode, sourceNode) => {
+    const consumePattern = /\{([^}]+)\}/;
+    const match = consumePattern.exec(transitionNode.data.label);
+    if (match) {
+        const [color, number] = match[1].split(':');
+        let consumeNumber = parseInt(number, 10);
+        let tokensToConsume = sourceNode.data.tokens.filter(token => token.color === color);
+        if (tokensToConsume.length >= consumeNumber) {
+            sourceNode.data.tokens = sourceNode.data.tokens.filter(token => {
+                if (token.color === color && consumeNumber > 0) {
+                    consumeNumber--;
+                    return false;
+                }
+                return true;
+            });
+        }
+    }
+};
+
+const produceTokens = (transitionNode) => {
+    const connectedEdges = edges.filter(edge => edge.source === transitionNode.id);
+    connectedEdges.forEach(edge => {
+        const connectedNode = nodes.find(node => node.id === edge.target);
+        if (connectedNode && connectedNode.type === 'place') {
+            const producePattern = /\{([^}]+)\}/;
+            const match = producePattern.exec(transitionNode.data.label);
+            if (match) {
+                const [color, number] = match[1].split(':');
+                let produceNumber = parseInt(number, 10);
+                for (let j = 0; j < produceNumber; j++) {
+                    connectedNode.data.tokens.push({color: color});
+                }
+            }
+        }
+    });
+};
 
   return (
     <div>
@@ -367,15 +386,9 @@ function Flow({userInfo}) {
           <button className={`btn btn-outline-dark`} onClick={runSimulation}>Run Simulation</button>
           <input 
               type="text" 
-              value={startNodeId} 
-              onChange={(e) => setStartNodeId(e.target.value)} 
-              placeholder="Start Node ID"
-          />
-          <input 
-              type="text" 
-              value={endNodeId} 
-              onChange={(e) => setEndNodeId(e.target.value)} 
-              placeholder="End Node ID"
+              value={step} 
+              onChange={(e) => setStep(e.target.value)} 
+              placeholder="Step to Simulation"
           />
           <ReactFlow
             nodes={nodes}
