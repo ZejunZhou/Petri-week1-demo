@@ -1,0 +1,61 @@
+version: '3'
+
+services:
+  react-frontend:
+    build:
+      context: ./react-app
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    volumes:
+      - ./react-app:/app/react-app
+    networks:
+      - mynetwork
+
+  flask-backend:
+    build:
+      context: ./flask-app
+      dockerfile: Dockerfile
+    ports:
+      - 5001:5001
+    networks:
+      - mynetwork
+
+  cassandra-seed:
+    image: cassandra:latest
+    ports:
+      - 9042:9042
+    expose:
+      - 9042
+    networks:
+      - mynetwork
+    environment:
+      - CASSANDRA_CLUSTER_NAME=my-cluster
+      - CASSANDRA_SEEDS=cassandra-seed
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "DESCRIBE CLUSTER"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  ngrok: 
+    image: ngrok/ngrok
+    ports:
+      - 4040:4040
+    command: http react-frontend:3000
+    environment:
+      - NGROK_AUTHTOKEN=2WMJ2Zs4liHTnWFzRRmwaq1i6f8_5K5VPMmFraecfNgxetAR9
+    networks:
+      - mynetwork
+        
+  arangodb:
+    image: arangodb/arangodb
+    environment:
+      - ARANGO_ROOT_PASSWORD=123456
+    ports:
+      - 8529:8529
+    networks:
+      - mynetwork
+  
+networks:
+  mynetwork:
