@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState, useContext, useRef } from "react";
 import 'reactflow/dist/style.css';
-import ReactFlow, { MiniMap, Controls, Background, useNodesState, useEdgesState, addEdge} from 'reactflow';
+import ReactFlow, { MiniMap, Controls, Background, useNodesState, useEdgesState, addEdge, ReactFlowProvider} from 'reactflow';
 import TextUpdaterNode from '../Node-type/TextUpdaterNode';
 import {useTextUpdater } from '../Node-type/TextUpdaterContext';
 import PlaceNode from "../Node-type/PlaceNode";
@@ -10,6 +10,8 @@ import LeftSidebar from "../navbar-component/leftsidebar";
 import RightSidebar from "../navbar-component/rightsidebar";
 import throttle from 'lodash/throttle';
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid'
+import styles from './Flow.module.css'
 
 const rfStyle = {
   backgroundColor: 'none',
@@ -18,6 +20,18 @@ const rfStyle = {
 const nodeStylefree = {
   backgroundColor: '#B0D9B1',
 };
+
+const transitionStyle = {
+    borderRadius: '50%', 
+    width: '200px', 
+    height: '200px', 
+    padding: '10px',
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    flexDirection: 'column', 
+    backgroundColor: '#B0D9B1',
+}
 
 const nodeStylebusy = {
   backgroundColor: '#FF6969',
@@ -53,6 +67,8 @@ function Flow({userInfo}) {
   const [userImage, setUserImage] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [step, setStep] = useState(0);
+  const reactFlowWrapper = useRef(null);
+  const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
   const onConnect = useCallback((params) => {
     const sourceNode = nodes.find(node => node.id === params.source);
@@ -202,29 +218,29 @@ function Flow({userInfo}) {
     });
 };
 
-  const addPlaceNode = () => {
+ const addPlaceNode = (position) => {
     const newNode = {
-      id: 'place' + (nodes.length + 1),
-      type: 'place',
-      position: { x: 100, y: 100 },
-      data: { label: 'Place Node', tokens: [{color:'red'}, {color:'red'}], updateLabel},
-      style: nodeStylefree,
+        id: uuidv4(),
+        type: 'place',
+        position: position,
+        data: { label: 'Place Node', tokens: [], updateLabel},
+        style: nodeStylefree,
     };
     setNodes(nodes => [...nodes, newNode]);
     saveNodeToDB(newNode, userInfo.email);
-  };
+};
 
-   const addTransitionNode = ()=> {
-      const newNode = {
-        id: 'transition' + (nodes.length + 1),
+const addTransitionNode = (position) => {
+    const newNode = {
+        id: uuidv4(),
         type: 'transition',
-        position: { x: 200, y: 100 },
-        data: { label: 'this is a test {red:1}', tokens:[], updateLabel},
-        style: nodeStylefree,
-      };
-      setNodes(nodes => [...nodes, newNode]);
-      saveNodeToDB(newNode, userInfo.email);
-  }
+        position: position,
+        data: { label: '{red:1}', tokens:[], updateLabel},
+        style: transitionStyle,
+    };
+    setNodes(nodes => [...nodes, newNode]);
+    saveNodeToDB(newNode, userInfo.email);
+};
 
   useEffect(() => {
     const fetchData = async () => {
@@ -290,10 +306,8 @@ const runSimulation = () => {
     for (let step = 0; step < getMaxSteps(); step++) { 
         setTimeout(() => {
             transitions.forEach(transitionNode => {
-                const incomingEdges = edges.filter(edge => edge.target === transitionNode.id); 
-                
+                const incomingEdges = edges.filter(edge => edge.target === transitionNode.id);  
                 const canFire = incomingEdges.every(edge => {
-                    transitionNode.style.backgroundColor = "#B0D9B1"
                     const sourceNode = nodes.find(node => node.id === edge.source);
                     return sourceNode && hasEnoughTokens(transitionNode, sourceNode);
                 });
@@ -307,7 +321,7 @@ const runSimulation = () => {
                     });
                     produceTokens(transitionNode); 
                 } else{
-                    alert(transitionNode.id + " cant be fired")
+                    alert(transitionNode.data.label + " cant be fired")
                 }
                 
             });
@@ -371,18 +385,91 @@ const produceTokens = (transitionNode) => {
     });
 };
 
+const onDragStart = (event, dragType, data) => {
+  if (dragType === 'token') {
+    event.dataTransfer.setData('application/reactflowtoken', JSON.stringify(data));
+  } else {
+    event.dataTransfer.setData('application/reactflownode', dragType);
+  }
+  event.dataTransfer.effectAllowed = 'move';
+};
+
+
+const onDragOver = (event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+};
+
+
+const onDrop = (event) => {
+  event.preventDefault();
+  const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
+  const nodeType = event.dataTransfer.getData('application/reactflownode');
+  const tokenData = event.dataTransfer.getData('application/reactflowtoken');
+  const position = reactFlowInstance.project({
+    x: event.clientX - reactFlowBounds.left,
+    y: event.clientY - reactFlowBounds.top,
+  });
+
+  if (nodeType) {
+     if (nodeType === 'place') {
+        addPlaceNode(position);
+    } else if (nodeType === 'transition') {
+        addTransitionNode(position);
+    } 
+  } else if (tokenData) {
+    const token = JSON.parse(tokenData);
+    addTokenToNode(event, token);
+  }
+};
+
+const addTokenToNode = (event, token) => {
+  const nodeId = detectNodeIdFromEvent(event); 
+  if (nodeId) {
+    setNodes((prevNodes) =>
+      prevNodes.map((node) => {
+        if (node.id === nodeId && node.type === 'place') {
+          return {
+            ...node,
+            data: { ...node.data, tokens: [...node.data.tokens, token] },
+          };
+        }
+        return node;
+      })
+    );
+  }
+};
+
+const detectNodeIdFromEvent = (event) => {
+  let target = event.target;
+  while (target && !target.getAttribute('data-nodeid') && target !== reactFlowWrapper.current) {
+    target = target.parentNode;
+  }
+  if (target && target.getAttribute('data-nodeid')) {
+    return target.getAttribute('data-nodeid');
+  }
+  return null;
+
+};
+
   return (
     <div>
       <Navbar userImage={userImage}/>
       <div className="d-flex">
         <div className="flex-column flex-shrink-0" style={{ width: '13%'}}>
-          <LeftSidebar selectedNode={selectedNode} handleColorChange={handleColorChange} handleAddToken={handleAddToken}/>
+          <LeftSidebar selectedNode={selectedNode} handleColorChange={handleColorChange} handleAddToken={handleAddToken} onDragStart={onDragStart}/>
         </div>
         <div className="flex-grow-1" style={{ height: '90vh' }}>
           {/* <h1>Hello, {userInfo.email}, Your name is {userInfo.name.toLowerCase()}</h1> */}
           {/* <button onClick={handleRunning}>Start Running</button> */}
-          <button className={`btn btn-outline-dark`} onClick={addPlaceNode}>Add Place Node</button>
-          <button className={`btn btn-outline-dark`} onClick={addTransitionNode}>Add Transition Node</button>
+          {/* <button className={`btn btn-outline-dark`} onClick={addPlaceNode}>Add Place Node</button>
+          <button className={`btn btn-outline-dark`} onClick={addTransitionNode}>Add Transition Node</button> */}
+          <div className="btn btn-primary mb-2" draggable onDragStart={(event) => onDragStart(event, 'place')}>
+            Drag Place Node
+          </div>
+          <div className="btn btn-secondary mb-2" draggable onDragStart={(event) => onDragStart(event, 'transition')}>
+            Drag Transition Node
+          </div>
           <button className={`btn btn-outline-dark`} onClick={runSimulation}>Run Simulation</button>
           <input 
               type="text" 
@@ -390,23 +477,30 @@ const produceTokens = (transitionNode) => {
               onChange={(e) => setStep(e.target.value)} 
               placeholder="Step to Simulation"
           />
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            nodeTypes={nodeTypes}
-            style={rfStyle}
-            onNodeClick={onNodeClick}
-            onNodeDragStop={onNodeDragStop}
-            onNodesDelete={onNodesDelete}
-            onPaneClick={onPaneClick}
-          >
-            <Controls />
-            <MiniMap zoomable pannable nodeColor={nodeColor}/>
-            <Background variant="dots" gap={12} size={2} />
-          </ReactFlow>
+          <ReactFlowProvider>
+          <div className={styles["reactflow-wrapper"]} ref={reactFlowWrapper}>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              nodeTypes={nodeTypes}
+              style={rfStyle}
+              onNodeClick={onNodeClick}
+              onNodeDragStop={onNodeDragStop}
+              onNodesDelete={onNodesDelete}
+              onPaneClick={onPaneClick}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              onInit={setReactFlowInstance}
+            >
+              <Controls />
+              <MiniMap zoomable pannable nodeColor={nodeColor}/>
+              <Background variant="dots" gap={12} size={2} />
+            </ReactFlow>
+            </div>
+          </ReactFlowProvider>
         </div>
         <div className="flex-column flex-shrink-0" style={{ width: '13%' }}>
           <RightSidebar selectedNode={selectedNode}/>

@@ -1,9 +1,15 @@
 import React from 'react';
 import { useState } from 'react';
 
-const LeftSidebar = ({ selectedNode, handleColorChange, handleAddToken}) => {
+const LeftSidebar = ({ selectedNode, handleColorChange, handleAddToken, onDragStart}) => {
     const [tokenPairs, setTokenPairs] = useState([{ key: '', value: '' }]);
     const [tokenColor, setTokenColor] = useState('#000000');
+    const [token, setToken] = useState({ color: 'red' }); 
+
+    const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setToken({ ...token, [name]: value });
+    };
 
     const handlePairChange = (index, field, value) => {
         const newPairs = [...tokenPairs];
@@ -72,7 +78,24 @@ const LeftSidebar = ({ selectedNode, handleColorChange, handleAddToken}) => {
              </div>}
 
             <div className="bg-light p-3 border">
-                <h5>Local Token</h5>
+                <h5>Create and Drag Token</h5>
+                <div>
+                <input
+                type="text"
+                name="color"
+                value={token.color}
+                onChange={handleInputChange}
+                placeholder="Token Color"
+                />
+                {/****/}
+                <div
+                className="btn btn-info mb-2"
+                draggable
+                onDragStart={(e) => onDragStart(e, 'token', token)}
+                >
+                Create and Drag Token
+                </div>
+            </div>
             </div>
         </div>
     );

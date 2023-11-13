@@ -27,19 +27,22 @@ function PlaceNode({ data, id, isConnectable, selected }) {
 
   return (
     <>
-      <div style={{
-        border: `${selected ? '1px solid black' : '1px'}`,
-        padding: '10px'
-      }}>
+       <div
+        data-nodeid={id} 
+        style={{
+          border: `${selected ? '1px solid black' : '1px'}`,
+          padding: '10px'
+        }}
+      >
         <Handle
           type="target"
-          position={Position.Top}
+          position={Position.Left}
           onConnect={(params) => console.log('handle onConnect', params)}
           isConnectable={isConnectable}
         />
         <Handle
           type="source"
-          position={Position.Bottom}
+          position={Position.Right}
           onConnect={(params) => console.log('handle onConnect', params)}
           isConnectable={isConnectable}
           style={{ background: 'red'}}
