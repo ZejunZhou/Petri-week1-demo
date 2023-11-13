@@ -31,20 +31,20 @@ function TransitionNode({ data, id, isConnectable, selected}) {
     }}>
         <Handle
             type="target"
-            position={Position.Right}
+            position={Position.Left}
             onConnect={(params) => console.log('handle onConnect', params)}
             isConnectable={isConnectable}
         />
          <Handle
             type="source"
-            position={Position.Left}
+            position={Position.Right}
             onConnect={(params) => console.log('handle onConnect', params)}
             isConnectable={isConnectable}
             style={{ background: 'red'}}
         />
-      <div>
+      {/* <div>
          Transition Node Label: <strong>{data.label}</strong>
-      </div>
+      </div> */}
       <input type="text" value={data.label} onChange={handleInputChange} />
       {data.tokens.map((token, index) => (
             <Token key={index}  color={token.color} />
