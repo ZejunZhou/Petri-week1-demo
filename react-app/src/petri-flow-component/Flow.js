@@ -449,6 +449,7 @@ const detectNodeIdFromEvent = (event) => {
     return target.getAttribute('data-nodeid');
   }
   return null;
+
 };
 
   return (
