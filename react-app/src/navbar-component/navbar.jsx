@@ -50,6 +50,18 @@ const Navbar = (props) => {
         setOpen(!openToken);
     };
 
+    const [openTransition, setOpenT] = useState(true);
+
+    const handleTransition = () => {
+        setOpenT(!openTransition);
+    };
+
+    const [openPlace, setOpenP] = useState(true);
+
+    const handlePlace = () => {
+        setOpenP(!openPlace);
+    };
+
     function generate(element) {
         return [0, 1, 2].map((value) =>
             React.cloneElement(element, {
@@ -119,7 +131,7 @@ const Navbar = (props) => {
                     <ListItemIcon>
                         {openToken ? <ExpandLess /> : <ExpandMore />}
                     </ListItemIcon>
-                    <ListItemText primary="Token" />
+                    <ListItemText primary="Tokens" />
                 </ListItemButton>
                 <Collapse in={openToken} timeout="auto" unmountOnExit>
                     <List component="div" disablePadding sx={{"& .hidden-button": {
@@ -145,22 +157,66 @@ const Navbar = (props) => {
                         </ListItemButton>
                     </List>
                 </Collapse>
-                <ListItem>
-                    <ListItemAvatar>
-                        <ExpandMoreIcon />
-                    </ListItemAvatar>
-                    <ListItemText
-                        primary="Places"
-                    />
-                </ListItem>
-                <ListItem>
-                    <ListItemAvatar>
-                        <ExpandMoreIcon />
-                    </ListItemAvatar>
-                    <ListItemText
-                        primary="Transitions"
-                    />
-                </ListItem>
+                <ListItemButton onClick={handlePlace}>
+                    <ListItemIcon>
+                        {openPlace ? <ExpandLess /> : <ExpandMore />}
+                    </ListItemIcon>
+                    <ListItemText primary="Places" />
+                </ListItemButton>
+                <Collapse in={openPlace} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding sx={{"& .hidden-button": {
+                        display: "none"
+                        },
+                        "&:hover .hidden-button": {
+                        display: "flex"
+                    }}}>
+                        <ListItemButton>
+                            <ListItemAvatar></ListItemAvatar>
+                            <ListItemText primary="Place1" />
+                            <ListItemSecondaryAction edge="end" className='hidden-button'>
+                                <IconButton edge="end" size="small">
+                                    <AddIcon fontSize="small"/>
+                                </IconButton>
+                                <IconButton edge="end" size="small">
+                                    <DeleteIcon fontSize="small"/>
+                                </IconButton>
+                                <IconButton edge="end" size="small">
+                                    <EditIcon fontSize="small"/>
+                                </IconButton>
+                            </ListItemSecondaryAction>
+                        </ListItemButton>
+                    </List>
+                </Collapse>
+                <ListItemButton onClick={handleTransition}>
+                    <ListItemIcon>
+                        {openTransition ? <ExpandLess /> : <ExpandMore />}
+                    </ListItemIcon>
+                    <ListItemText primary="Transitions" />
+                </ListItemButton>
+                <Collapse in={openTransition} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding sx={{"& .hidden-button": {
+                        display: "none"
+                        },
+                        "&:hover .hidden-button": {
+                        display: "flex"
+                    }}}>
+                        <ListItemButton>
+                            <ListItemAvatar></ListItemAvatar>
+                            <ListItemText primary="Transition1" />
+                            <ListItemSecondaryAction edge="end" className='hidden-button'>
+                                <IconButton edge="end" size="small">
+                                    <AddIcon fontSize="small"/>
+                                </IconButton>
+                                <IconButton edge="end" size="small">
+                                    <DeleteIcon fontSize="small"/>
+                                </IconButton>
+                                <IconButton edge="end" size="small">
+                                    <EditIcon fontSize="small"/>
+                                </IconButton>
+                            </ListItemSecondaryAction>
+                        </ListItemButton>
+                    </List>
+                </Collapse>
             </List>
             </Box>
         </Drawer>
