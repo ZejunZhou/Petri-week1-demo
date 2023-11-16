@@ -33,7 +33,7 @@ const pages =["File", "Edit", "View", "Run"]
 
 const drawerWidth = 240;
 
-const Navbar = (props) => {
+const Navbar = ({onDragStart}) => {
     
     const [anchorEl, setAnchorEl] = useState(null);
     const open = Boolean(anchorEl);
@@ -111,7 +111,7 @@ const Navbar = (props) => {
         >
             <Toolbar />
             <Box sx={{ overflow: 'auto' }}>
-            <List>
+            <List >
                 <ListItem
                     secondaryAction={
                         <IconButton edge="end" aria-label="add" onClick={handleClick} aria-controls={open ? 'account-menu' : undefined}
@@ -121,8 +121,7 @@ const Navbar = (props) => {
                         </IconButton>
                     }
                     >
-                    <ListItemAvatar>
-                    </ListItemAvatar>
+                    <ListItemAvatar />
                     <ListItemText
                         primary="Types"
                     />
@@ -141,7 +140,7 @@ const Navbar = (props) => {
                         display: "flex"
                     }}}>
                         <ListItemButton>
-                            <ListItemAvatar></ListItemAvatar>
+                            <ListItemAvatar />
                             <ListItemText primary="Token1" />
                             <ListItemSecondaryAction edge="end" className='hidden-button'>
                                 <IconButton edge="end" size="small">
@@ -170,8 +169,8 @@ const Navbar = (props) => {
                         "&:hover .hidden-button": {
                         display: "flex"
                     }}}>
-                        <ListItemButton>
-                            <ListItemAvatar></ListItemAvatar>
+                        <ListItemButton draggable onDragStart={(event) => onDragStart(event, 'place')}>
+                            <ListItemIcon />
                             <ListItemText primary="Place1" />
                             <ListItemSecondaryAction edge="end" className='hidden-button'>
                                 <IconButton edge="end" size="small">
@@ -200,8 +199,8 @@ const Navbar = (props) => {
                         "&:hover .hidden-button": {
                         display: "flex"
                     }}}>
-                        <ListItemButton>
-                            <ListItemAvatar></ListItemAvatar>
+                        <ListItemButton draggable onDragStart={(event) => onDragStart(event, 'transition')}>
+                            <ListItemIcon />
                             <ListItemText primary="Transition1" />
                             <ListItemSecondaryAction edge="end" className='hidden-button'>
                                 <IconButton edge="end" size="small">

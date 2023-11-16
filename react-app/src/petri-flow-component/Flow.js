@@ -454,10 +454,11 @@ const detectNodeIdFromEvent = (event) => {
 
   return (
     <div>
-      <Navbar userImage={userImage}/>
+        <Navbar selectedNode={selectedNode} onDragStart={onDragStart}/>
       <div className="d-flex">
         <div className="flex-column flex-shrink-0" style={{ width: '13%'}}>
           <LeftSidebar selectedNode={selectedNode} handleColorChange={handleColorChange} handleAddToken={handleAddToken} onDragStart={onDragStart}/>
+                  
         </div>
         <div className="flex-grow-1" style={{ height: '90vh' }}>
           {/* <h1>Hello, {userInfo.email}, Your name is {userInfo.name.toLowerCase()}</h1> */}
