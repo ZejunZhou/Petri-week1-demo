@@ -29,7 +29,9 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import Add from '@mui/icons-material/Add';
 import { ListItemSecondaryAction } from '@mui/material';
 
-const pages =["File", "Edit", "View", "Run"]
+//const pages =["File", "Edit", "View", "Run"];
+
+const pages =[]
 
 const drawerWidth = 240;
 
@@ -71,6 +73,75 @@ const Navbar = ({onDragStart}) => {
         }
     return (
         <Box sx={{ display: 'flex' }}>
+            <CssBaseline />
+            <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+                <Toolbar>
+                    <Typography
+                        variant="h6"
+                        noWrap
+                        component="a"
+                        href="/"
+                        sx={{
+                        mr: 2,
+                        display: { xs: 'none', md: 'flex' },
+                        fontFamily: 'monospace',
+                        fontWeight: 700,
+                        letterSpacing: '.3rem',
+                        color: 'inherit',
+                        textDecoration: 'none',
+                        }}
+                    >
+                        Statewise
+                    </Typography>
+                </Toolbar>
+            </AppBar>
+            <Drawer
+                variant="permanent"
+                sx={{
+                width: drawerWidth,
+                flexShrink: 0,
+                [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' },
+                }}
+            >
+                <Toolbar />
+                <Box sx={{ overflow: 'auto' }}>
+                <List >
+                    <ListItem>
+                        <ListItemAvatar />
+                        <ListItemText
+                            primary="Add"
+                        />
+                    </ListItem>
+                    
+                    <ListItemButton draggable divider={true} sx={{paddingTop: 2, paddingBottom: 2}} 
+                        onDragStart={(event) => onDragStart(event, 'place')}>
+                        <ListItemIcon />
+                        <ListItemText primary="Place" />
+                    </ListItemButton>
+                    
+                    <ListItemButton draggable divider={true} sx={{paddingTop: 2, paddingBottom: 2}} 
+                        onDragStart={(event) => onDragStart(event, 'transition')}>
+                        <ListItemIcon />
+                        <ListItemText primary="Transition" />
+                    </ListItemButton>
+
+                    <ListItemButton draggable divider={true} sx={{paddingTop: 2, paddingBottom: 2}}>
+                        <ListItemAvatar />
+                        <ListItemText primary="Token" />
+                    </ListItemButton>
+                </List>
+                </Box>
+            </Drawer>
+            <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+                <Toolbar />
+            </Box>
+        </Box>
+    );
+};
+
+export default Navbar;
+
+/*<Box sx={{ display: 'flex' }}>
         <CssBaseline />
         <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
             <Toolbar>
@@ -113,7 +184,7 @@ const Navbar = ({onDragStart}) => {
             <Box sx={{ overflow: 'auto' }}>
             <List >
                 <ListItem
-                    secondaryAction={
+                    </List>secondaryAction={
                         <IconButton edge="end" aria-label="add" onClick={handleClick} aria-controls={open ? 'account-menu' : undefined}
                         aria-haspopup="true"
                         aria-expanded={open ? 'true' : undefined}>
@@ -123,7 +194,7 @@ const Navbar = ({onDragStart}) => {
                     >
                     <ListItemAvatar />
                     <ListItemText
-                        primary="Types"
+                        primary="Add"
                     />
                 </ListItem>
                 <ListItemButton onClick={handleToken}>
@@ -267,8 +338,4 @@ const Navbar = ({onDragStart}) => {
             Transition Type
             </MenuItem>
         </Menu>
-        </Box>
-    );
-};
-
-export default Navbar;
+        </Box> */
