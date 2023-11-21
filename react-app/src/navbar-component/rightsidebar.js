@@ -1,84 +1,82 @@
 import React from 'react';
 
-const RightSidebar = ({selectedNode}) => {
+const RightSidebar = ({ selectedNode, selectedEdge }) => {
     const calculateColorCounts = (tokens) => {
         const colorCounts = {};
-
         tokens.forEach(token => {
-        if (colorCounts[token.color]) {
-            colorCounts[token.color] += 1;
-        } else {
-            colorCounts[token.color] = 1;
-        }
+            colorCounts[token.color] = (colorCounts[token.color] || 0) + 1;
         });
-
         return colorCounts;
     };
 
-    const renderColorCounts = () => {
-        if (selectedNode && selectedNode.data.tokens) {
-            const colorCounts = calculateColorCounts(selectedNode.data.tokens);
-            
+    const renderNodeDetails = () => {
+        if (!selectedNode) return null;
+
+        const renderColorCounts = () => {
+            const colorCounts = calculateColorCounts(selectedNode.data.tokens || []);
             return Object.entries(colorCounts).map(([color, count], index) => (
-                <li key={index}>
-                    {color}:{count}
-                </li>
+                <li key={index}>{color}: {count}</li>
             ));
-        }
-        return <p>No token</p>;
+        };
+
+        return (
+            <>
+                <div className="bg-light p-3 border">
+                    <h5>{selectedNode.type === 'place' ? 'Token' : 'Transition'}</h5>
+                    <ul>{selectedNode.data.tokens && selectedNode.data.tokens.length > 0 ? renderColorCounts() : <li>No token</li>}</ul>
+                </div>
+                <div className="bg-light p-3 border flex-fill">
+                    <h5>Node ID</h5>
+                    <p>{selectedNode.id}</p>
+                </div>
+                <div className="bg-light p-3 border">
+                    <h5>Position</h5>
+                    <p>x: {selectedNode.position.x}</p>
+                    <p>y: {selectedNode.position.y}</p>
+                </div>
+                <div className="bg-light p-3 border">
+                    <h5>Label</h5>
+                    <p>{selectedNode.data.label}</p>
+                </div>
+                {/* 添加其他节点信息的渲染逻辑 */}
+            </>
+        );
     };
 
+    const renderEdgeDetails = () => {
+        if (!selectedEdge) return null;
+
+        console.log(selectedEdge)
+
+        return (
+            <>
+                <div className="bg-light p-3 border">
+                    <h5>Edge ID</h5>
+                    <p>{selectedEdge.id}</p>
+                </div>
+                <div className="bg-light p-3 border flex-fill">
+                    <h5>Edge Type</h5>
+                    <p>{selectedEdge.type}</p>
+                </div>
+                <div className="bg-light p-3 border">
+                    <h5>Source</h5>
+                    <p>{selectedEdge.source}</p>
+                </div>
+                <div className="bg-light p-3 border">
+                    <h5>Target</h5>
+                    <p>{selectedEdge.target}</p>
+                </div>
+            </>
+        );
+    };
+
+    const renderEmptyState = () => {
+        return <div className="bg-light p-3 border h-100"></div>;
+    };
 
     return (
         <div className="d-flex flex-column h-100">
-            <div className="bg-light p-3 border">
-                {selectedNode && selectedNode.type == 'place' && <h5>Token</h5>}
-                {selectedNode && selectedNode.type == 'transition' && <h5>Transition</h5>}
-                {selectedNode && selectedNode.data.tokens && (
-                    selectedNode.data.tokens.length > 0 ? (
-                        <ul>
-                           {renderColorCounts()}
-                        </ul>
-                    ) : (
-                        <p>No token</p>
-                    )
-                )}
-            </div>
-
-            <div className="bg-light p-3 border flex-fill">
-                <h5>Node ID</h5>
-                {selectedNode && <p>{selectedNode.id}</p>}
-                
-            </div>
-
-            <div className="bg-light p-3 border flex-fill">
-                <h5>Fill</h5>
-                
-            </div>
-
-            <div className="bg-light p-3 border">
-                <h5>Position</h5>
-                {selectedNode && selectedNode.position && <div>
-                    <p>x : {selectedNode.position.x}</p>
-                    <p>y : {selectedNode.position.y}</p>
-                    </div>}
-            </div>
-
-            <div className="bg-light p-3 border">
-                <h5>label</h5>
-            {selectedNode && selectedNode.data.label && <p>{selectedNode.data.label}</p>}
-            </div>
-
-            <div className="bg-light p-3 border">
-                <h5>Status</h5>
-            
-            </div>
-
-            <div className="bg-light p-3 border">
-                <h5>Type</h5>
-                 {selectedNode && selectedNode.type && <p>{selectedNode.type}</p>}
-            
-            </div>
+            {selectedNode ? renderNodeDetails() : selectedEdge ? renderEdgeDetails() : renderEmptyState()}
         </div>
     );
 };

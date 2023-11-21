@@ -60,11 +60,27 @@ session.execute("""
         edge_id text,
         source text,
         target text,
+        type text,
+        label text,
         animated boolean,
         style map<text, text>,
         PRIMARY KEY (customer_email, edge_id)
     );
 """)
+
+### for token table cassandra
+session.execute("""
+    CREATE TABLE IF NOT EXISTS tokens (
+        customer_email text,
+        token_id text,
+        node_id text,
+        color text,
+        property list<frozen<map<text, text>>>,
+        style map<text, text>,
+        PRIMARY KEY (customer_email, token_id)
+    );
+""")
+
 
 ### ArangoDb initialization
 client = ArangoClient(hosts='http://arangodb:8529')
@@ -247,16 +263,32 @@ def delete_node():
         return jsonify({"status": "error", "message": str(e)}), 400
 
 
+@app.route('/delete_edge', methods=['DELETE'])
+def delete_edge():
+    try:
+        edge_id = request.args.get('id')
+        customer_email = request.args.get('customer_email')
+        session.execute(
+            """
+            DELETE FROM edges 
+            WHERE edge_id = %s AND customer_email = %s
+            """,
+            (edge_id, customer_email)
+        )
+        return jsonify({"status": "success", "message": "edge deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
 @app.route('/insert_edges', methods=['POST'])
 def save_edge():
     try:
         edge = request.json
         session.execute(
             """
-            INSERT INTO edges (customer_email, edge_id, source, target, animated)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO edges (customer_email, edge_id, source, target, animated, type, label)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             """,
-            (edge['customer_email'], edge['id'], edge['source'], edge['target'], edge['animated'])
+            (edge['customer_email'], edge['id'], edge['source'], edge['target'], edge['animated'], edge['type'], edge['data']['label'])
         )
         return jsonify({"status": "success", "message": "edge inserted successfully"}), 200
     except Exception as e:
@@ -294,7 +326,7 @@ def get_edges():
     try:
         email = request.args.get('email')
         rows = session.execute('SELECT * FROM edges WHERE customer_email=%s', (email,))
-        edges = [{'id': row.edge_id, 'source': row.source, 'target': row.target, 'animated': row.animated} for row in rows]
+        edges = [{'id': row.edge_id, 'source': row.source, 'target': row.target, 'animated': row.animated, 'type': row.type, 'data':{'label':row.label}} for row in rows]
         return jsonify(edges)
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
@@ -327,7 +359,7 @@ def show_nodes():
 @app.route('/show_edges')
 def show_edges():
     rows = session.execute('SELECT * FROM edges')
-    edges = [{'customer_email': row.customer_email, 'edge_id': row.edge_id, 'source': row.source, 'target': row.target, 'animated': row.animated} for row in rows]
+    edges = [{'customer_email': row.customer_email, 'edge_id': row.edge_id, 'source': row.source, 'target': row.target, 'animated': row.animated, 'type':row.type, 'data':{'label':row.label}} for row in rows]
     return jsonify(edges)
 
 

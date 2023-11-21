@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Handle, Position } from 'reactflow';
+import { Handle, Position, NodeResizer} from 'reactflow';
 
 function Token({ color }) {
   return (
@@ -25,6 +25,8 @@ function TransitionNode({ data, id, isConnectable, selected}) {
   };
 
   return (
+    <>
+    <NodeResizer color="#ff0071" isVisible={selected} minWidth={100} minHeight={30} />
     <div style={{
       border: `${selected ? '1px solid black': '1px'}`,
       padding: '10px'
@@ -50,6 +52,7 @@ function TransitionNode({ data, id, isConnectable, selected}) {
             <Token key={index}  color={token.color} />
       ))}
     </div>
+    </>
   );
 }
 
