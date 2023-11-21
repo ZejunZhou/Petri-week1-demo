@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState, useContext, useRef } from "react";
 import 'reactflow/dist/style.css';
-import ReactFlow, { MiniMap, Controls, Background, useNodesState, useEdgesState, addEdge, ReactFlowProvider} from 'reactflow';
+import ReactFlow, { MiniMap, Controls, Background, useNodesState, useEdgesState, addEdge, ReactFlowProvider, MarkerType} from 'reactflow';
 import TextUpdaterNode from '../Node-type/TextUpdaterNode';
 import {useTextUpdater } from '../Node-type/TextUpdaterContext';
 import PlaceNode from "../Node-type/PlaceNode";
@@ -12,6 +12,7 @@ import throttle from 'lodash/throttle';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid'
 import styles from './Flow.module.css'
+import ArrowEdge from "../Edge-type/ArrowEdge";
 
 const rfStyle = {
   backgroundColor: 'none',
@@ -37,6 +38,7 @@ const nodeStylebusy = {
   backgroundColor: '#FF6969',
 }
 
+
 const barborNodes = [
   // { id: 'enter', position: { x: 0, y: 300 }, data: { label: 'enter' }, style: nodeStylefree },
   // { id: 'waiting', position: { x: 200, y: 300 }, data: { label: 'waiting' }, style: nodeStylefree },
@@ -47,7 +49,6 @@ const barborNodes = [
   // { id: 'end', position: { x: 600, y: 600 }, data: { label: 'end' }, style: nodeStylefree },
 ];
 
-const nodeTypes = { textUpdater: TextUpdaterNode, place:PlaceNode, transition:TransitionNode};
 
 const initialEdges = [
   // { id: 'customer-enter', source: 'customer', target: 'enter', animated: true },
@@ -59,13 +60,23 @@ const initialEdges = [
   // { id: 'idle', source: 'idle', target: 'end', animated: true },
 ];
 
+
+const nodeTypes = {
+    textUpdater: TextUpdaterNode,
+    place: PlaceNode,
+    transition: TransitionNode,
+};
+
+const edgeTypes = {arrow: ArrowEdge};
+
+
 function Flow({userInfo}) {
   const { inputText } = useTextUpdater(); 
-
   const [nodes, setNodes, onNodesChange] = useNodesState(barborNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [userImage, setUserImage] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
+  const [selectedEdge, setSelectedEdge] = useState(null);
   const [step, setStep] = useState(0);
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
@@ -76,18 +87,36 @@ function Flow({userInfo}) {
     if (sourceNode && targetNode && 
         ((sourceNode.type === 'place' && targetNode.type === 'transition') || 
          (sourceNode.type === 'transition' && targetNode.type === 'place'))) {
-        const newEdge = {...params, animated: true };
-        setEdges((eds) => addEdge(newEdge, eds));
+        const newEdge = {...params, animated: false, type: 'arrow', id:uuidv4(), data: {label: '{color:red}', updateEdgeLabel}};
+        console.log("newEdge is", newEdge)
+        setEdges((eds) => [...eds, newEdge]); 
         saveEdgeToDB(newEdge, userInfo.email);
     } else {
         alert('You Can Only Connect Place node to Transition Node');
     }
   }, [nodes, setEdges]);
 
+  const defaultEdgeOptions = {
+    style: { strokeWidth: 3, stroke: 'black' },
+    type: 'arrow',
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      color: 'black',
+    },
+  };
+
   
   const onNodeClick = (event, node) => {
+    setSelectedEdge(null);
     setSelectedNode(node);
 };
+
+  const onEdgeClick = (event, edge) => {
+    console.log("Clicked edge:", edge);
+    setSelectedNode(null);
+    setSelectedEdge(edge);
+    console.log(selectedEdge);
+  };
 
   //console.log(selectedNode)
 
@@ -95,12 +124,16 @@ function Flow({userInfo}) {
     if (selectedNode) {
       saveNodeToDB(selectedNode, userInfo.email)
     }
+    if (selectedEdge){
+      saveEdgeToDB(selectedEdge, userInfo.email)
+    }
+    setSelectedEdge(null);
     setSelectedNode(null);
   };
 
   const onNodesDelete = async (nodesToDelete) => {
     try {
-        nodesToDelete.forEach(async (node) => {
+       nodesToDelete.forEach(async (node) => {
             const response = await deleteNodeFromDB(node.id, userInfo.email);
             if (response.status === 200) {
                 // console.log(`Node ${node.id} deleted successfully.`);
@@ -111,12 +144,32 @@ function Flow({userInfo}) {
                 return;
             } else {
                 // console.error(`Error during the deletion of node ${node.id}:`, response.data.message);
-            }
+            } 
         });
     } catch (error) {
         console.error('db error occurred while deleting nodes:', error);
     }
   };
+
+
+  const onEdgesDelete = async(edgesToDeletes) => {
+    console.log("edgesToDeletes", edgesToDeletes)
+    try{
+       edgesToDeletes.forEach(async (edge) => {
+          const response = await deleteEdgeFromDB(edge.id, userInfo.email);
+          if (response.status === 200) {
+              console.log(`edge ${edge.id} deleted successfully.`);
+              setEdges(prevEdge => prevEdge.filter(n => n.id !== edge.id));
+              if (selectedEdge) {
+                setSelectedEdge(null);
+              }
+              return;
+          }
+      });
+    }catch (error) {
+        console.error('db error occurred while deleting edge:', error);
+    }
+  }
 
 
   const onNodeDragStop = (event, node) => {
@@ -149,6 +202,16 @@ function Flow({userInfo}) {
     }
   };
 
+const deleteEdgeFromDB = async (edgeId, email) => {
+  console.log(edgeId)
+  try{
+    const response = await axios.delete('http://localhost:5001/delete_edge', {params: {id:edgeId, customer_email:email}})
+    return response;
+  } catch(error){
+      console.error('Error during the edge deletion', error);
+      return error.response
+  }
+}
 
   const handleColorChange = (event) => {
     const newColor = event.target.value;
@@ -178,7 +241,7 @@ function Flow({userInfo}) {
 
   const saveEdgeToDB = async (edge, email) => {
     try {
-      await axios.post('http://localhost:5001/insert_edges', {...edge, customer_email:email, id: String(edge.source) + String(edge.target)});
+      await axios.post('http://localhost:5001/insert_edges', {...edge, customer_email:email});
     } catch (error) {
       console.error('Error saving edge:', error);
     }
@@ -188,6 +251,14 @@ function Flow({userInfo}) {
     setNodes((nodes) =>
       nodes.map((node) =>
         node.id === nodeId ? { ...node, data: { ...node.data, label: newLabel } } : node
+      )
+    );
+ };
+
+ const updateEdgeLabel = (edgeId, newLabel) => {
+    setEdges((edges) =>
+      edges.map((edge) =>
+        edge.id === edgeId ? { ...edge, data: { ...edge.data, label: newLabel } } : edge
       )
     );
  };
@@ -264,7 +335,13 @@ const addTransitionNode = (position) => {
           let updatedEdges = [];
           for (const edge of edgesResponse.data) {
               if (!edges.some(prevEdge => prevEdge.id === edge.id)) {
-                  updatedEdges.push(edge);
+                  updatedEdges.push({
+                      ...edge,
+                      data: {
+                          ...edge.data,
+                          updateEdgeLabel,
+                      },
+                  });;
               }
           }
 
@@ -486,14 +563,18 @@ const detectNodeIdFromEvent = (event) => {
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
               style={rfStyle}
               onNodeClick={onNodeClick}
+              onEdgeClick={onEdgeClick}
               onNodeDragStop={onNodeDragStop}
               onNodesDelete={onNodesDelete}
+              onEdgesDelete={onEdgesDelete}
               onPaneClick={onPaneClick}
               onDrop={onDrop}
               onDragOver={onDragOver}
               onInit={setReactFlowInstance}
+              defaultEdgeOptions={defaultEdgeOptions}
             >
               <Controls />
               <MiniMap zoomable pannable nodeColor={nodeColor}/>
@@ -503,7 +584,7 @@ const detectNodeIdFromEvent = (event) => {
           </ReactFlowProvider>
         </div>
         <div className="flex-column flex-shrink-0" style={{ width: '13%' }}>
-          <RightSidebar selectedNode={selectedNode}/>
+          <RightSidebar selectedNode={selectedNode} selectedEdge={selectedEdge}/>
         </div>
       </div>
     </div>

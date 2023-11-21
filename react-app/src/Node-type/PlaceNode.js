@@ -1,5 +1,4 @@
-import React, { memo, useState } from 'react';
-import { Handle, Position, NodeToolbar } from 'reactflow';
+import { Handle, Position, NodeResizer} from 'reactflow';
 
 function Token({ color }) {
   return (
@@ -19,7 +18,6 @@ function Token({ color }) {
   );
 }
 
-
 function PlaceNode({ data, id, isConnectable, selected }) {
   const handleInputChange = (event) => {
     data.updateLabel(id, event.target.value);
@@ -27,6 +25,7 @@ function PlaceNode({ data, id, isConnectable, selected }) {
 
   return (
     <>
+      <NodeResizer color="#ff0071" isVisible={selected} minWidth={100} minHeight={30} />
        <div
         data-nodeid={id} 
         style={{
@@ -66,4 +65,4 @@ function PlaceNode({ data, id, isConnectable, selected }) {
   );
 }
 
-export default PlaceNode;
+export default PlaceNode
