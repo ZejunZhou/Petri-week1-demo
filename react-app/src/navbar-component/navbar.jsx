@@ -36,41 +36,7 @@ const pages =[]
 const drawerWidth = 240;
 
 const Navbar = ({onDragStart}) => {
-    
-    const [anchorEl, setAnchorEl] = useState(null);
-    const open = Boolean(anchorEl);
-    const handleClick = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
 
-    const [openToken, setOpen] = useState(true);
-
-    const handleToken = () => {
-        setOpen(!openToken);
-    };
-
-    const [openTransition, setOpenT] = useState(true);
-
-    const handleTransition = () => {
-        setOpenT(!openTransition);
-    };
-
-    const [openPlace, setOpenP] = useState(true);
-
-    const handlePlace = () => {
-        setOpenP(!openPlace);
-    };
-
-    function generate(element) {
-        return [0, 1, 2].map((value) =>
-            React.cloneElement(element, {
-            key: value,
-            }),
-        );
-        }
     return (
         <Box sx={{ display: 'flex' }}>
             <CssBaseline />
@@ -95,46 +61,7 @@ const Navbar = ({onDragStart}) => {
                     </Typography>
                 </Toolbar>
             </AppBar>
-            <Drawer
-                variant="permanent"
-                sx={{
-                width: drawerWidth,
-                flexShrink: 0,
-                [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' },
-                }}
-            >
-                <Toolbar />
-                <Box sx={{ overflow: 'auto' }}>
-                <List >
-                    <ListItem>
-                        <ListItemAvatar />
-                        <ListItemText
-                            primary="Add"
-                        />
-                    </ListItem>
-                    
-                    <ListItemButton draggable divider={true} sx={{paddingTop: 2, paddingBottom: 2}} 
-                        onDragStart={(event) => onDragStart(event, 'place')}>
-                        <ListItemIcon />
-                        <ListItemText primary="Place" />
-                    </ListItemButton>
-                    
-                    <ListItemButton draggable divider={true} sx={{paddingTop: 2, paddingBottom: 2}} 
-                        onDragStart={(event) => onDragStart(event, 'transition')}>
-                        <ListItemIcon />
-                        <ListItemText primary="Transition" />
-                    </ListItemButton>
-
-                    <ListItemButton draggable divider={true} sx={{paddingTop: 2, paddingBottom: 2}}>
-                        <ListItemAvatar />
-                        <ListItemText primary="Token" />
-                    </ListItemButton>
-                </List>
-                </Box>
-            </Drawer>
-            <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-                <Toolbar />
-            </Box>
+            
         </Box>
     );
 };

@@ -1,6 +1,21 @@
 import React from 'react';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Drawer from '@mui/material/Drawer';
+import CssBaseline from '@mui/material/CssBaseline';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Tooltip from '@mui/material/Tooltip';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemAvatar from '@mui/material/ListItemAvatar';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
 
-const RightSidebar = ({ selectedNode, selectedEdge }) => {
+const drawerWidth = 240;
+
+const RightSidebar = ({ selectedNode, selectedEdge, handleColorChange }) => {
     const calculateColorCounts = (tokens) => {
         const colorCounts = {};
         tokens.forEach(token => {
@@ -28,6 +43,17 @@ const RightSidebar = ({ selectedNode, selectedEdge }) => {
                 <div className="bg-light p-3 border flex-fill">
                     <h5>Node ID</h5>
                     <p>{selectedNode.id}</p>
+                </div>
+                <div className="bg-light p-3 border flex-fill">
+                    <h5>Color Panel</h5>
+                    <label htmlFor="colorPicker">Change Node Color:</label>
+                    <input 
+                        id="colorPicker"
+                        type="color"
+                        disabled={!selectedNode}  // when there is no select node
+                        value={selectedNode ? selectedNode.style.backgroundColor : '#FFFFFF'}
+                        onChange={handleColorChange}
+                    />
                 </div>
                 <div className="bg-light p-3 border">
                     <h5>Position</h5>
@@ -75,9 +101,23 @@ const RightSidebar = ({ selectedNode, selectedEdge }) => {
     };
 
     return (
-        <div className="d-flex flex-column h-100">
+        <Box>
+            <Drawer
+                variant="permanent"
+                sx={{
+                width: drawerWidth,
+                flexShrink: 0,
+                [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' },
+                }}
+                anchor="right"
+            >
+                <Toolbar />
+            <div className="d-flex flex-column h-100">
             {selectedNode ? renderNodeDetails() : selectedEdge ? renderEdgeDetails() : renderEmptyState()}
-        </div>
+            </div>
+            </Drawer>
+        </Box>
+        
     );
 };
 

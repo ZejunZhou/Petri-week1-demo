@@ -14,6 +14,8 @@ import { v4 as uuidv4 } from 'uuid'
 import styles from './Flow.module.css'
 import ArrowEdge from "../Edge-type/ArrowEdge";
 
+import Toolbar from '@mui/material/Toolbar';
+
 const rfStyle = {
   backgroundColor: 'none',
 };
@@ -531,23 +533,26 @@ const detectNodeIdFromEvent = (event) => {
 
   return (
     <div>
-        <Navbar selectedNode={selectedNode} onDragStart={onDragStart}/>
       <div className="d-flex">
+        <Navbar selectedNode={selectedNode} onDragStart={onDragStart}/>
+        
         <div className="flex-column flex-shrink-0" style={{ width: '13%'}}>
-          <LeftSidebar selectedNode={selectedNode} handleColorChange={handleColorChange} handleAddToken={handleAddToken} onDragStart={onDragStart}/>
-                  
+          <LeftSidebar selectedNode={selectedNode} handleColorChange={handleColorChange} handleAddToken={handleAddToken} onDragStart={onDragStart}/>       
         </div>
+
         <div className="flex-grow-1" style={{ height: '90vh' }}>
+        <Toolbar />
           {/* <h1>Hello, {userInfo.email}, Your name is {userInfo.name.toLowerCase()}</h1> */}
           {/* <button onClick={handleRunning}>Start Running</button> */}
           {/* <button className={`btn btn-outline-dark`} onClick={addPlaceNode}>Add Place Node</button>
           <button className={`btn btn-outline-dark`} onClick={addTransitionNode}>Add Transition Node</button> */}
-          <div className="btn btn-primary mb-2" draggable onDragStart={(event) => onDragStart(event, 'place')}>
+          {/*<div className="btn btn-primary mb-2" draggable onDragStart={(event) => onDragStart(event, 'place')}>
             Drag Place Node
           </div>
           <div className="btn btn-secondary mb-2" draggable onDragStart={(event) => onDragStart(event, 'transition')}>
             Drag Transition Node
           </div>
+          */}
           <button className={`btn btn-outline-dark`} onClick={runSimulation}>Run Simulation</button>
           <input 
               type="text" 
@@ -585,7 +590,7 @@ const detectNodeIdFromEvent = (event) => {
           </ReactFlowProvider>
         </div>
         <div className="flex-column flex-shrink-0" style={{ width: '13%' }}>
-          <RightSidebar selectedNode={selectedNode} selectedEdge={selectedEdge}/>
+          <RightSidebar selectedNode={selectedNode} selectedEdge={selectedEdge} handleColorChange={handleColorChange}/>
         </div>
       </div>
     </div>
