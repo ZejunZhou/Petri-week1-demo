@@ -40,11 +40,11 @@ const RightSidebar = ({ selectedNode, selectedEdge, handleColorChange }) => {
                     <h5>{selectedNode.type === 'place' ? 'Token' : 'Transition'}</h5>
                     <ul>{selectedNode.data.tokens && selectedNode.data.tokens.length > 0 ? renderColorCounts() : <li>No token</li>}</ul>
                 </div>
-                <div className="bg-light p-3 border flex-fill">
+                <div className="bg-light p-3 border">
                     <h5>Node ID</h5>
                     <p>{selectedNode.id}</p>
                 </div>
-                <div className="bg-light p-3 border flex-fill">
+                <div className="bg-light p-3 border">
                     <h5>Color Panel</h5>
                     <label htmlFor="colorPicker">Change Node Color:</label>
                     <input 

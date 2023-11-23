@@ -51,10 +51,11 @@ const Navbar = ({onDragStart}) => {
                         mr: 2,
                         display: { xs: 'none', md: 'flex' },
                         fontFamily: 'monospace',
-                        fontWeight: 700,
-                        letterSpacing: '.3rem',
+                        fontWeight: 800,
+                        letterSpacing: '.35rem',
                         color: 'inherit',
                         textDecoration: 'none',
+                        mx: 2
                         }}
                     >
                         Statewise

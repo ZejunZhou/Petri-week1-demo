@@ -83,7 +83,7 @@ const LeftSidebar = ({ selectedNode, handleColorChange, handleAddToken, onDragSt
 
                     <ListItem>
                             <div>
-                            <ListItemText primary="Create Token" sx={{mx: 4}}/>
+                            <ListItemText primary="Create Token" sx={{mx: 4, my: 2}}/>
                             <TextField
                             type="text"
                             name="color"

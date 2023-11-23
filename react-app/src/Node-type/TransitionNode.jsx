@@ -28,7 +28,7 @@ function TransitionNode({ data, id, isConnectable, selected}) {
     <>
     <NodeResizer color="#ff0071" isVisible={selected} minWidth={100} minHeight={30} />
     <div style={{
-      border: `${selected ? '1px solid black': '1px'}`,
+      border: `${selected ? '1px solid black': '2px solid darkgrey'}`,
       padding: '10px'
     }}>
         <Handle

@@ -21,19 +21,19 @@ const rfStyle = {
 };
 
 const nodeStylefree = {
-  backgroundColor: '#B0D9B1',
+  backgroundColor: '#F5F5F5',
 };
 
-const transitionStyle = {
+const placeStyle = {
     borderRadius: '50%', 
-    width: '200px', 
+    width: ' 200px', 
     height: '200px', 
     padding: '10px',
     display: 'flex', 
     justifyContent: 'center', 
     alignItems: 'center',
     flexDirection: 'column', 
-    backgroundColor: '#B0D9B1',
+    backgroundColor: '#none',
 }
 
 const nodeStylebusy = {
@@ -296,8 +296,8 @@ const deleteEdgeFromDB = async (edgeId, email) => {
         id: uuidv4(),
         type: 'place',
         position: position,
-        data: { label: 'Place Node', tokens: [], updateLabel},
-        style: nodeStylefree,
+        data: { label: 'Place Node', tokens: [], updateLabel,},
+        style: placeStyle,
     };
     setNodes(nodes => [...nodes, newNode]);
     saveNodeToDB(newNode, userInfo.email);
@@ -309,7 +309,7 @@ const addTransitionNode = (position) => {
         type: 'transition',
         position: position,
         data: { label: '{red:1}', tokens:[], updateLabel},
-        style: transitionStyle,
+        style: nodeStylefree,
     };
     setNodes(nodes => [...nodes, newNode]);
     saveNodeToDB(newNode, userInfo.email);
