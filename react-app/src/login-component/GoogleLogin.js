@@ -49,10 +49,12 @@ const GoogleLogin = ({isLogin, setLogin, userInfo, setUserInfo}) => {
 
 
   return (
-   <button type="button" onClick={googleLogin}> 
-      <img src="https://img.icons8.com/color/16/000000/google-logo.png" alt="google"/>
-      <span>Continue with Google</span>
-   </button>
+   <div style={{textAlign: "center", marginTop: "300px"}}>
+      <button type="button" onClick={googleLogin} style={{height: "60px"}}> 
+        <img src="https://img.icons8.com/color/16/000000/google-logo.png" alt="google"/>
+        <span>Continue with Google</span>
+    </button>
+   </div>
   );
 };
 

@@ -68,8 +68,8 @@ const LeftSidebar = ({ selectedNode, handleColorChange, handleAddToken, onDragSt
                     <ListItem divider={true}>
                         <NatOutlinedIcon sx={{mx: 2}}/>
                         <ListItemText
-                            primary="Add"
-                            sx={{mx: 4}}
+                            primary="Add Elements"
+                            sx={{mx: 1}}
                         />
                     </ListItem>
                     

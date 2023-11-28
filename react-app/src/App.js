@@ -15,7 +15,15 @@ function App() {
     <div>
       <Routes>
         <Route path="/login" element ={<GoogleLogin setLogin={setLogin} setUserInfo={setUserInfo} isLogin={isLogin} userInfo={userInfo}/>} />
-        <Route path="/" element={isLogin ? <Flow userInfo={userInfo}/> : <div><h1>Please log in to access the reactflow-app</h1><a href="/login">link to login</a></div>} />
+        <Route path="/" element={isLogin ? <Flow userInfo={userInfo}/> : 
+          <div style={{textAlign: "center", marginTop: "300px"}}>
+            <h1><b>Welcome!</b></h1>
+            <h3>Please log in to access the reactflow-app</h3>
+            <div style={{marginTop: "100px"}}>
+              <a href="/login">link to login</a>
+            </div>
+          </div>
+        } />
       </Routes>
     </div>
    )
