@@ -21,13 +21,13 @@ const rfStyle = {
 };
 
 const nodeStylefree = {
-  backgroundColor: '#F5F5F5',
+  backgroundColor: '#none',
 };
 
 const placeStyle = {
     borderRadius: '50%', 
-    width: ' 200px', 
-    height: '200px', 
+    width: ' 150px', 
+    height: '150px', 
     padding: '10px',
     display: 'flex', 
     justifyContent: 'center', 
@@ -220,7 +220,7 @@ const deleteEdgeFromDB = async (edgeId, email) => {
     setNodes(prevNodes => {
         const updatedNodes = prevNodes.map(el => 
             el.id === selectedNode.id 
-                ? { ...el, style: { ...el.style, backgroundColor: newColor } } 
+                ? { ...el, data: { ...el.data, color: newColor } } 
                 : el
         );
         // Find the updated node
@@ -296,7 +296,7 @@ const deleteEdgeFromDB = async (edgeId, email) => {
         id: uuidv4(),
         type: 'place',
         position: position,
-        data: { label: 'Place Node', tokens: [], updateLabel,},
+        data: { label: 'Place Node', tokens: [], updateLabel, color: "#f5f5f5"},
         style: placeStyle,
     };
     setNodes(nodes => [...nodes, newNode]);
@@ -308,7 +308,7 @@ const addTransitionNode = (position) => {
         id: uuidv4(),
         type: 'transition',
         position: position,
-        data: { label: '{red:1}', tokens:[], updateLabel},
+        data: { label: '{red:1}', tokens:[], updateLabel, color: "#f5f5f5"},
         style: nodeStylefree,
     };
     setNodes(nodes => [...nodes, newNode]);

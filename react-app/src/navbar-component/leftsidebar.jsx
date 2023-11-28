@@ -15,6 +15,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import IconButton from '@mui/material/IconButton';
 import AddIcon from '@mui/icons-material/Add';
+import NatOutlinedIcon from '@mui/icons-material/NatOutlined';
 import TextField from '@mui/material/TextField';
 
 const drawerWidth = 240;
@@ -65,6 +66,7 @@ const LeftSidebar = ({ selectedNode, handleColorChange, handleAddToken, onDragSt
                 <Box sx={{ overflow: 'auto' }}>
                 <List >
                     <ListItem divider={true}>
+                        <NatOutlinedIcon sx={{mx: 2}}/>
                         <ListItemText
                             primary="Add"
                             sx={{mx: 4}}
@@ -74,11 +76,27 @@ const LeftSidebar = ({ selectedNode, handleColorChange, handleAddToken, onDragSt
                     <ListItemButton draggable divider={true} sx={{paddingTop: 2, paddingBottom: 2}} 
                         onDragStart={(event) => onDragStart(event, 'place')}>
                         <ListItemText primary="Add Place"  sx={{mx: 4}}/>
+                        <IconButton
+                            className="btn btn-info mb-2"
+                            draggable
+                            onDragStart={(e) => onDragStart(e, 'place')}
+                            edge="end"
+                            >
+                            <AddIcon />
+                        </IconButton>
                     </ListItemButton>
                     
                     <ListItemButton draggable divider={true} sx={{paddingTop: 2, paddingBottom: 2}} 
                         onDragStart={(event) => onDragStart(event, 'transition')}>
                         <ListItemText primary="Add Transition"  sx={{mx: 4}}/>
+                        <IconButton
+                            className="btn btn-info mb-2"
+                            draggable
+                            onDragStart={(e) => onDragStart(e, 'transition')}
+                            edge="end"
+                            >
+                            <AddIcon />
+                        </IconButton>
                     </ListItemButton>
 
                     <ListItem>

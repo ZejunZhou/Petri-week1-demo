@@ -26,20 +26,16 @@ function PlaceNode({ data, id, isConnectable, selected, }) {
     data.updateLabel(id, event.target.value);
   };
 
-  const width = 120;
-  const height = 120;
-
   return (
     <>
       
-       <div
+      <div
         data-nodeid={id} 
         style={{
-          border: `${selected ? '1px solid black' : '1px'}`,
+          border: `${selected ? '2px solid grey' : '1px'}`,
           padding: '10px',
           position: "relative"
-        }}
-      >
+      }}>
         <Handle
           type="target"
           position={Position.Left}
@@ -65,17 +61,23 @@ function PlaceNode({ data, id, isConnectable, selected, }) {
           position: 'relative'
         }}>
           {
-          selected? <input type="text" value={data.label} onChange={handleInputChange} style={{width: 120}}/> : <h5><b>{data.label}</b></h5>
+            selected? <input type="text" value={data.label} onChange={handleInputChange} style={{width: 120}}/> : <h5><b>{data.label}</b></h5>
           }
-          <svg width={width} height={height+10} >
-            <ellipse cx={width/2} cy={height/2 +5} rx={width / 2} ry={height / 2} style={{fill: "#f5f5f5", strokeWidth: 2, stroke: '#000'}} /> ;
-          </svg>
-          <div></div>
-          {
+          <div style={{borderRadius: '50%', 
+              width: ' 150px', 
+              height: '150px', 
+              padding: '10px',
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center',
+              backgroundColor: '#f5f5f5',
+              border: 'solid #787878',}}>
+            {
               data.tokens.map((token, index) => (
                 <Token key={index}  color={token.color} />
                 ))
-          }
+            }
+          </div>
         </div>
       </div>
     </>

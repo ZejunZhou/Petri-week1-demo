@@ -19,17 +19,20 @@ function Token({ color }) {
   );
 }
 
-function TransitionNode({ data, id, isConnectable, selected}) {
+function TransitionNode({ data, id, isConnectable, selected, color}) {
   const handleInputChange = (event) => {
     data.updateLabel(id, event.target.value);
   };
 
   return (
     <>
-    <NodeResizer color="#ff0071" isVisible={selected} minWidth={100} minHeight={30} />
+    {
+      //<NodeResizer color="#ff0071" isVisible={selected} minWidth={100} minHeight={30} />
+    }
     <div style={{
-      border: `${selected ? '1px solid black': '2px solid darkgrey'}`,
-      padding: '10px'
+      border: `${selected ? '2px solid grey': '1px'}`,
+      padding: '10px',
+      position: "relative"
     }}>
         <Handle
             type="target"
@@ -47,10 +50,40 @@ function TransitionNode({ data, id, isConnectable, selected}) {
       {/* <div>
          Transition Node Label: <strong>{data.label}</strong>
       </div> */}
-      <input type="text" value={data.label} onChange={handleInputChange} />
-      {data.tokens.map((token, index) => (
-            <Token key={index}  color={token.color} />
-      ))}
+      <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          position: 'relative'
+        }}>
+
+        <div style={{
+            borderRadius: '10%', 
+            width: ' 100px', 
+            height: '150px', 
+            padding: '10px',
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            backgroundColor: '#f5f5f5',
+            border: 'solid #787878',}}>
+        {
+          data.tokens.map((token, index) => (
+              <Token key={index}  color={token.color} />
+            ))
+        }
+        </div>
+      </div>
+      <div style={{display: 'flex',
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          position: 'relative', paddingTop: "10px"}}>
+      {
+          selected? <input type="text" value={data.label} onChange={handleInputChange} style={{width: 120}}/> : <h5><b>{data.label}</b></h5>
+      }
+      </div>
     </div>
     </>
   );
