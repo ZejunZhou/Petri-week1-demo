@@ -308,7 +308,7 @@ const addTransitionNode = (position) => {
         id: uuidv4(),
         type: 'transition',
         position: position,
-        data: { label: '{red:1}', tokens:[], updateLabel, color: "#f5f5f5"},
+        data: { label: 'Transition Node', tokens:[], updateLabel, color: "#f5f5f5"},
         style: nodeStylefree,
     };
     setNodes(nodes => [...nodes, newNode]);
