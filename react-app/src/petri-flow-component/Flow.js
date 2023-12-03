@@ -18,15 +18,19 @@ const rfStyle = {
   backgroundColor: 'none',
 };
 
-const nodeStylefree = {
+const PlaceStyle = {
   backgroundColor: '#B0D9B1',
+  width: '150px', 
+  height: '100px',
+  display: 'flex', 
+  justifyContent: 'center', 
+  alignItems: 'center',
 };
 
 const transitionStyle = {
     borderRadius: '50%', 
-    width: '200px', 
-    height: '200px', 
-    padding: '10px',
+    width: '130px', 
+    height: '130px', 
     display: 'flex', 
     justifyContent: 'center', 
     alignItems: 'center',
@@ -34,31 +38,11 @@ const transitionStyle = {
     backgroundColor: '#B0D9B1',
 }
 
-const nodeStylebusy = {
-  backgroundColor: '#FF6969',
-}
+
+const barborNodes = [];
 
 
-const barborNodes = [
-  // { id: 'enter', position: { x: 0, y: 300 }, data: { label: 'enter' }, style: nodeStylefree },
-  // { id: 'waiting', position: { x: 200, y: 300 }, data: { label: 'waiting' }, style: nodeStylefree },
-  // { id: 'serve', position: { x: 400, y: 300 }, data: { label: 'serve' }, style: nodeStylefree },
-  // { id: 'busy', position: { x: 500, y: 200 }, data: { label: 'busy' }, style: nodeStylefree },
-  // { id: 'done', position: { x: 600, y: 300 }, data: { label: 'done' }, style: nodeStylefree },
-  // { id: 'idle', position: { x: 500, y: 400 }, data: { label: 'idle' }, style: nodeStylefree },
-  // { id: 'end', position: { x: 600, y: 600 }, data: { label: 'end' }, style: nodeStylefree },
-];
-
-
-const initialEdges = [
-  // { id: 'customer-enter', source: 'customer', target: 'enter', animated: true },
-  // { id: 'enter-waiting', source: 'enter', target: 'waiting', animated: true },
-  // { id: 'waiting-serve', source: 'waiting', target: 'serve', animated: true },
-  // { id: 'serve-busy', source: 'serve', target: 'busy', animated: true },
-  // { id: 'busy-done', source: 'busy', target: 'done', animated: true },
-  // { id: 'done-idle', source: 'done', target: 'idle', animated: true },
-  // { id: 'idle', source: 'idle', target: 'end', animated: true },
-];
+const initialEdges = [];
 
 
 const nodeTypes = {
@@ -77,9 +61,45 @@ function Flow({userInfo}) {
   const [userImage, setUserImage] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [selectedEdge, setSelectedEdge] = useState(null);
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(1); // made default step to 1
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  const [isSimulating, setIsSimulating] = useState(false); // marked as true when simulation start
+
+
+  function extractColorFromEdgeLabel(edge) {
+  const labelPattern = /\{color:(.+?)\}/;
+  const match = edge.data.label.match(labelPattern);
+  return match ? match[1] : null;
+}
+
+function updateTransitionNodeLabels(nodes, edges) {
+  const updatedNodes = nodes.map(node => {
+    if (node.type === 'transition') {
+      const connectedEdges = edges.filter(edge => edge.target === node.id);
+      const edgeColorCounts = connectedEdges.reduce((acc, edge) => {
+        const color = extractColorFromEdgeLabel(edge);
+        if (color) {
+          acc[color] = (acc[color] || 0) + 1;
+        }
+        return acc;
+      }, {});
+
+      const colorCountLabel = Object.entries(edgeColorCounts)
+        .map(([color, count]) => `${color}:${count}`)
+        .join(', ');
+
+      const updatedNode = { ...node, data: { ...node.data, transitions: colorCountLabel }};
+      saveNodeToDB(updatedNode, userInfo.email);
+      return updatedNode;
+    }
+    return node;
+  });
+
+  return updatedNodes;
+}
+
+
 
   const onConnect = useCallback((params) => {
     const sourceNode = nodes.find(node => node.id === params.source);
@@ -87,14 +107,24 @@ function Flow({userInfo}) {
     if (sourceNode && targetNode && 
         ((sourceNode.type === 'place' && targetNode.type === 'transition') || 
          (sourceNode.type === 'transition' && targetNode.type === 'place'))) {
-        const newEdge = {...params, animated: false, type: 'arrow', id:uuidv4(), data: {label: '{color:red}', updateEdgeLabel}};
-        console.log("newEdge is", newEdge)
-        setEdges((eds) => [...eds, newEdge]); 
-        saveEdgeToDB(newEdge, userInfo.email);
+        console.log("at onconnect ",edges)
+        // case to prevent double edge
+        const existingEdge = edges.find(e => (e.source === sourceNode.id && e.target === targetNode.id) || (e.source === targetNode.id && e.target === sourceNode.id));
+        if (!existingEdge) {
+          const newEdge = {...params, animated: false, type: 'arrow', id: sourceNode.id + targetNode.id, data: { label: '{color:red}', updateEdgeLabel }};
+          setEdges(eds => {
+            const updatedEdges = addEdge(newEdge, eds);
+            setNodes(nds => updateTransitionNodeLabels(nds, updatedEdges));
+            return updatedEdges;
+          });
+          saveEdgeToDB(newEdge, userInfo.email);
+        } else {
+          alert('An edge already exists between these nodes' + existingEdge.id);
+        }
     } else {
         alert('You Can Only Connect Place node to Transition Node');
     }
-  }, [nodes, setEdges]);
+  }, [nodes, setEdges, edges]);
 
   const defaultEdgeOptions = {
     style: { strokeWidth: 3, stroke: 'black' },
@@ -112,10 +142,10 @@ function Flow({userInfo}) {
 };
 
   const onEdgeClick = (event, edge) => {
-    console.log("Clicked edge:", edge);
+    //console.log("Clicked edge:", edge);
     setSelectedNode(null);
     setSelectedEdge(edge);
-    console.log(selectedEdge);
+    //console.log(selectedEdge);
   };
 
   //console.log(selectedNode)
@@ -152,24 +182,29 @@ function Flow({userInfo}) {
   };
 
 
-  const onEdgesDelete = async(edgesToDeletes) => {
-    console.log("edgesToDeletes", edgesToDeletes)
-    try{
-       edgesToDeletes.forEach(async (edge) => {
-          const response = await deleteEdgeFromDB(edge.id, userInfo.email);
-          if (response.status === 200) {
-              console.log(`edge ${edge.id} deleted successfully.`);
-              setEdges(prevEdge => prevEdge.filter(n => n.id !== edge.id));
-              if (selectedEdge) {
-                setSelectedEdge(null);
-              }
-              return;
-          }
-      });
-    }catch (error) {
+  const onEdgesDelete = async (edgesToDeletes) => {
+    console.log("edgesToDeletes", edgesToDeletes);
+    try {
+        for (const edge of edgesToDeletes) {
+            const response = await deleteEdgeFromDB(edge.id, userInfo.email);
+            if (response.status === 200) {
+                console.log(`edge ${edge.id} deleted successfully.`);
+                setEdges(prevEdges => {
+                  const updatedEdges = prevEdges.filter(n => n.id !== edge.id);
+                  setNodes(nds => updateTransitionNodeLabels(nds, updatedEdges));// update transition's summary
+                  return updatedEdges;
+                });
+                console.log("edge after deletion", edges);
+                if (selectedEdge) {
+                    setSelectedEdge(null);
+                }
+            }
+        }
+    } catch (error) {
         console.error('db error occurred while deleting edge:', error);
     }
-  }
+}
+
 
 
   const onNodeDragStop = (event, node) => {
@@ -255,13 +290,31 @@ const deleteEdgeFromDB = async (edgeId, email) => {
     );
  };
 
- const updateEdgeLabel = (edgeId, newLabel) => {
-    setEdges((edges) =>
-      edges.map((edge) =>
-        edge.id === edgeId ? { ...edge, data: { ...edge.data, label: newLabel } } : edge
-      )
-    );
- };
+
+const updateEdgeLabel = (edgeId, newLabel) => {
+  setEdges((edges) => {
+    let updatedEdge = null;
+
+    const updatedEdges = edges.map((edge) => {
+      if (edge.id === edgeId) {
+        updatedEdge = { ...edge, data: { ...edge.data, label: newLabel } };
+        return updatedEdge;
+      }
+      return edge;
+    });
+
+    // save updated edge to db
+    if (updatedEdge) {
+      saveEdgeToDB(updatedEdge, userInfo.email);
+    }
+    // update the transition node after label change
+    setNodes((nodes) => updateTransitionNodeLabels(nodes, updatedEdges));
+
+    return updatedEdges;
+  });
+};
+
+
 
  const handleAddToken = (color, pairs) => {
     if (!selectedNode) return;
@@ -294,8 +347,8 @@ const deleteEdgeFromDB = async (edgeId, email) => {
         id: uuidv4(),
         type: 'place',
         position: position,
-        data: { label: 'Place Node', tokens: [], updateLabel},
-        style: nodeStylefree,
+        data: { label: 'Place Node', tokens: [], transitions:'', updateLabel},
+        style: PlaceStyle,
     };
     setNodes(nodes => [...nodes, newNode]);
     saveNodeToDB(newNode, userInfo.email);
@@ -306,7 +359,7 @@ const addTransitionNode = (position) => {
         id: uuidv4(),
         type: 'transition',
         position: position,
-        data: { label: '{red:1}', tokens:[], updateLabel},
+        data: { label: 'Transition Node', tokens:[], transitions:'', updateLabel},
         style: transitionStyle,
     };
     setNodes(nodes => [...nodes, newNode]);
@@ -345,8 +398,8 @@ const addTransitionNode = (position) => {
               }
           }
 
-          setNodes((prevNodes) => prevNodes.concat(updatedNodes));
-          setEdges((prevEdges) => prevEdges.concat(updatedEdges));
+          setNodes(updatedNodes);
+          setEdges(updatedEdges);
       } catch (error) {
           console.error('Error fetching data:', error);
       }
@@ -375,92 +428,219 @@ const addTransitionNode = (position) => {
     return node.style && node.style.backgroundColor ? node.style.backgroundColor : '#eeeee2';
   };
 
-  
+
 const runSimulation = () => {
-    let delay = 1000;
-    const transitions = nodes.filter(node => node.type === 'transition'); 
+  if (isSimulating) return; // check if it simulating
 
-    for (let step = 0; step < getMaxSteps(); step++) { 
-        setTimeout(() => {
-            transitions.forEach(transitionNode => {
-                const incomingEdges = edges.filter(edge => edge.target === transitionNode.id);  
-                const canFire = incomingEdges.every(edge => {
-                    const sourceNode = nodes.find(node => node.id === edge.source);
-                    return sourceNode && hasEnoughTokens(transitionNode, sourceNode);
-                });
+  if (step <= 0){
+    alert("Step should be greater than 0 to simulate");
+    return
+  }
 
-                if (canFire && incomingEdges.length > 0) {
-                    incomingEdges.forEach(edge => {
-                        const sourceNode = nodes.find(node => node.id === edge.source); 
-                        if (sourceNode) {
-                            consumeTokens(transitionNode, sourceNode);
-                        }
-                    });
-                    produceTokens(transitionNode); 
-                } else{
-                    alert(transitionNode.data.label + " cant be fired")
-                }
-                
-            });
-            setNodes([...nodes]); 
-        }, delay);
-        delay += 1000;
+  setIsSimulating(true);
+
+  for (let currentStep = 0; currentStep < getMaxSteps(); currentStep++) {
+
+    setTimeout(() => {
+      resetTransitionColors();
+
+      const fireableTransitions = getFireableTransitions();
+      const allTransitions = nodes.filter(node => node.type === 'transition');
+
+      allTransitions.forEach(transitionNode => {
+        if (!fireableTransitions.includes(transitionNode.id)) {
+          transitionNode.style = { ...transitionNode.style, backgroundColor: '#B6BBC4' };
+        } else {
+          fireTransition(transitionNode);
+        }
+        const outgoingEdges = edges.filter(edge => edge.source === transitionNode.id);
+        if (outgoingEdges.length === 0) {
+          transitionNode.style = { ...transitionNode.style, backgroundColor: '#FF8080' };
+        }
+      });
+
+
+      setNodes([...nodes]);
+      if (currentStep === getMaxSteps() - 1) {
+        setIsSimulating(false); // marked as false when simulation is down
+      }
+    }, 1000 * currentStep);
+  }
+
+  //save node status after simulation to db
+  setTimeout(() => {
+    const savePromises = nodes.map(node => saveNodeToDB(node, userInfo.email))
+      .concat(edges.map(edge => saveEdgeToDB(edge, userInfo.email)));
+
+    Promise.all(savePromises)
+      .then(() => {
+        console.log('All nodes and edges have been saved to the database.');
+      })
+      .catch(error => {
+        console.error('An error occurred while saving to the database:', error);
+      });
+  }, 1000 * getMaxSteps());
+};
+
+const resetTransitionColors = () => {
+  nodes.forEach(node => {
+    if (node.type === 'transition') {
+      node.style = { ...node.style, backgroundColor: '#B0D9B1' };
     }
+  });
+};
+
+const fireTransition = (transitionNode) => {
+  // Check if the transition node has any outgoing edges
+  const outgoingEdges = edges.filter(edge => edge.source === transitionNode.id);
+  const hasOutgoingEdges = outgoingEdges.length > 0;
+
+  // If there are no outgoing edges, mark the transition as not fireable
+  if (!hasOutgoingEdges) {
+     return; // Do not fire this transition
+  }
+
+  // If there are outgoing edges, consume and produce tokens as usual
+  const incomingEdges = edges.filter(edge => edge.target === transitionNode.id);
+  incomingEdges.forEach(edge => {
+    const sourceNode = nodes.find(node => node.id === edge.source);
+    if (sourceNode) {
+      consumeTokenBasedOnExpression(edge.data.label, sourceNode);
+    }
+  });
+
+  outgoingEdges.forEach(edge => {
+    const targetNode = nodes.find(node => node.id === edge.target);
+    if (targetNode && targetNode.type === 'place') {
+      produceTokenBasedOnExpression(edge.data.label, targetNode);
+    }
+  });
+};
+
+const getFireableTransitions = () => {
+  return nodes.filter(node => {
+    if (node.type !== 'transition') return false;
+
+    const incomingEdges = edges.filter(edge => edge.target === node.id);
+    return incomingEdges.every(edge => {
+      const sourceNode = nodes.find(node => node.id === edge.source);
+      return evaluateExpression(edge.data.label, sourceNode);
+    });
+  }).map(node => node.id);
 };
 
 
-const hasEnoughTokens = (transitionNode, sourceNode) => {
-    const consumePattern = /\{([^}]+)\}/;
-    const match = consumePattern.exec(transitionNode.data.label);
-    if (match) {
-        const [color, number] = match[1].split(':');
-        let requiredTokens = parseInt(number, 10);
-        let availableTokens = sourceNode.data.tokens.filter(token => token.color === color).length;
-        return availableTokens >= requiredTokens;
+// boolean expression to fetch the boolean expression
+const evaluateExpression = (expression, sourceNode) => {
+  expression = expression.replace(/\s+/g, '');
+
+  if (expression.includes('(')) {
+    const innerExpressionMatch = expression.match(/\(([^()]+)\)/);
+    if (innerExpressionMatch) {
+      const innerExpression = innerExpressionMatch[1];
+      const evaluatedInner = evaluateExpression(innerExpression, sourceNode);
+      expression = expression.replace(`(${innerExpression})`, evaluatedInner ? 'true' : 'false');
+    }
+  }
+
+  if (expression.includes('&&')) {
+    const conditions = getColorsFromExpression(expression);
+    const tokenMap = sourceNode.data.tokens.reduce((acc, token) => {
+      acc[token.color] = (acc[token.color] || 0) + 1;
+      return acc;
+    }, {});
+
+    return conditions.every(color => {
+      if (tokenMap[color]) {
+        tokenMap[color]--;
+        return true;
+      }
+      return false;
+    });
+  } else if (expression.includes('||')) {
+    const conditions = getColorsFromExpression(expression);
+    return conditions.some(color => {
+      return sourceNode.data.tokens.some(token => token.color === color);
+    });
+  }
+
+  return parseBasicExpression(expression, sourceNode);
+};
+
+// base case -> {color:red}
+const parseBasicExpression = (expression, sourceNode) => {
+  const match = expression.match(/\{color:(\w+)\}/);
+  const color = match ? match[1] : null;
+  return sourceNode.data.tokens.some(token => token.color === color);
+};
+
+const consumeTokenBasedOnExpression = (expression, sourceNode) => {
+  const conditions = getColorsFromExpression(expression);
+
+  if (expression.includes('&&')) {
+    // check tokens number with all color
+    const tokenMap = sourceNode.data.tokens.reduce((acc, token) => {
+      acc[token.color] = (acc[token.color] || 0) + 1;
+      return acc;
+    }, {});
+
+    // make sure there is enough token
+    const allConditionsSatisfied = conditions.every(condition => {
+      if (tokenMap[condition]) {
+        tokenMap[condition]--; // -1, to check if it is enough
+        return true;
+      }
+      return false;
+    });
+
+    if (allConditionsSatisfied) {
+      // satisfied, consume
+      conditions.forEach(condition => consumeToken(sourceNode, condition));
+      return true;
     }
     return false;
+  } else {
+    // or case
+    for (const condition of conditions) {
+      if (consumeToken(sourceNode, condition)) {
+        return true; // consume the first token and stop
+      }
+    }
+  }
+  return false;
 };
+
+
+const produceTokenBasedOnExpression = (expression, targetNode) => {
+  const colors = getColorsFromExpression(expression);
+  if (colors.length > 0) {
+    targetNode.data.tokens.push({ color: colors[0] }); 
+  }
+};
+
+const getColorsFromExpression = (expression) => {
+  const matches = expression.match(/\{color:(\w+)\}/g) || [];
+  return matches.map(match => {
+    const colorMatch = match.match(/\{color:(\w+)\}/);
+    return colorMatch ? colorMatch[1] : null;
+  }).filter(color => color !== null);
+};
+
+const consumeToken = (node, color) => {
+  const tokenIndex = node.data.tokens.findIndex(token => token.color === color);
+  if (tokenIndex !== -1) {
+    node.data.tokens.splice(tokenIndex, 1); // delete the first found token
+    return true;
+  }
+  return false;
+};
+
 
 const getMaxSteps = () => {
-    return step
+  return step;
 };
 
-const consumeTokens = (transitionNode, sourceNode) => {
-    const consumePattern = /\{([^}]+)\}/;
-    const match = consumePattern.exec(transitionNode.data.label);
-    if (match) {
-        const [color, number] = match[1].split(':');
-        let consumeNumber = parseInt(number, 10);
-        let tokensToConsume = sourceNode.data.tokens.filter(token => token.color === color);
-        if (tokensToConsume.length >= consumeNumber) {
-            sourceNode.data.tokens = sourceNode.data.tokens.filter(token => {
-                if (token.color === color && consumeNumber > 0) {
-                    consumeNumber--;
-                    return false;
-                }
-                return true;
-            });
-        }
-    }
-};
 
-const produceTokens = (transitionNode) => {
-    const connectedEdges = edges.filter(edge => edge.source === transitionNode.id);
-    connectedEdges.forEach(edge => {
-        const connectedNode = nodes.find(node => node.id === edge.target);
-        if (connectedNode && connectedNode.type === 'place') {
-            const producePattern = /\{([^}]+)\}/;
-            const match = producePattern.exec(transitionNode.data.label);
-            if (match) {
-                const [color, number] = match[1].split(':');
-                let produceNumber = parseInt(number, 10);
-                for (let j = 0; j < produceNumber; j++) {
-                    connectedNode.data.tokens.push({color: color});
-                }
-            }
-        }
-    });
-};
 
 const onDragStart = (event, dragType, data) => {
   if (dragType === 'token') {
@@ -506,10 +686,12 @@ const addTokenToNode = (event, token) => {
     setNodes((prevNodes) =>
       prevNodes.map((node) => {
         if (node.id === nodeId && node.type === 'place') {
-          return {
+          const updatedNode = {
             ...node,
             data: { ...node.data, tokens: [...node.data.tokens, token] },
           };
+          saveNodeToDB(updatedNode, userInfo.email);
+          return updatedNode;
         }
         return node;
       })
@@ -540,13 +722,13 @@ const detectNodeIdFromEvent = (event) => {
           {/* <button onClick={handleRunning}>Start Running</button> */}
           {/* <button className={`btn btn-outline-dark`} onClick={addPlaceNode}>Add Place Node</button>
           <button className={`btn btn-outline-dark`} onClick={addTransitionNode}>Add Transition Node</button> */}
-          <div className="btn btn-primary mb-2" draggable onDragStart={(event) => onDragStart(event, 'place')}>
+          <div className="btn btn-primary mb-2" draggable={!isSimulating}  onDragStart={(event) => onDragStart(event, 'place')}>
             Drag Place Node
           </div>
-          <div className="btn btn-secondary mb-2" draggable onDragStart={(event) => onDragStart(event, 'transition')}>
+          <div className="btn btn-secondary mb-2" draggable={!isSimulating} onDragStart={(event) => onDragStart(event, 'transition')}>
             Drag Transition Node
           </div>
-          <button className={`btn btn-outline-dark`} onClick={runSimulation}>Run Simulation</button>
+          <button className={`btn btn-outline-dark`} onClick={runSimulation} disabled={isSimulating}>Run Simulation</button>
           <input 
               type="text" 
               value={step} 
