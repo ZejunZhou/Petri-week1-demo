@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState} from 'react';
 import { Handle, Position, NodeResizer} from 'reactflow';
 
 function Token({ color }) {
@@ -20,17 +20,37 @@ function Token({ color }) {
 }
 
 function TransitionNode({ data, id, isConnectable, selected}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [inputValue, setInputValue] = useState(data.label);
+
+    const toggleEditing = () => {
+    setIsEditing(true);
+  };
+
   const handleInputChange = (event) => {
-    data.updateLabel(id, event.target.value);
+    setInputValue(event.target.value);
+  };
+
+  const handleSubmit = (e) => {
+    e.stopPropagation(); 
+    data.updateLabel(id, inputValue);
+    setIsEditing(false); 
   };
 
   return (
     <>
-    <NodeResizer color="#ff0071" isVisible={selected} minWidth={100} minHeight={30} />
     <div style={{
       border: `${selected ? '1px solid black': '1px'}`,
-      padding: '10px'
-    }}>
+      borderRadius: '50%', 
+      width: '130px', 
+      height: '130px', 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center',
+      flexDirection: 'column', 
+    }}
+    onClick={toggleEditing}
+    >
         <Handle
             type="target"
             position={Position.Left}
@@ -44,10 +64,17 @@ function TransitionNode({ data, id, isConnectable, selected}) {
             isConnectable={isConnectable}
             style={{ background: 'red'}}
         />
-      {/* <div>
-         Transition Node Label: <strong>{data.label}</strong>
-      </div> */}
-      <input type="text" value={data.label} onChange={handleInputChange} />
+      {isEditing ? (
+            <>
+              <input type="text" value={inputValue} onChange={handleInputChange} />
+              <button onClick={handleSubmit}>Submit</button>
+            </>
+          ) : (
+            <span>{data.label}</span>
+          )}
+      <div>
+         <strong>{data.transitions}</strong>
+      </div>
       {data.tokens.map((token, index) => (
             <Token key={index}  color={token.color} />
       ))}
