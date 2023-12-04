@@ -14,6 +14,9 @@ import { v4 as uuidv4 } from 'uuid'
 import styles from './Flow.module.css'
 import ArrowEdge from "../Edge-type/ArrowEdge";
 
+
+import Toolbar from '@mui/material/Toolbar';
+
 const rfStyle = {
   backgroundColor: 'none',
 };
@@ -66,30 +69,57 @@ function Flow({userInfo}) {
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [isSimulating, setIsSimulating] = useState(false); // marked as true when simulation start
 
+  
+function extractColorFromEdgeLabel(edge) {
+  const labelPattern = /\{color:(.+?)\}/g;
+  let match;
+  let colorCount = {};
 
-  function extractColorFromEdgeLabel(edge) {
-  const labelPattern = /\{color:(.+?)\}/;
-  const match = edge.data.label.match(labelPattern);
-  return match ? match[1] : null;
+  while ((match = labelPattern.exec(edge.data.label)) !== null) {
+    const color = match[1];
+    colorCount[color] = (colorCount[color] || 0) + 1;
+  }
+
+  // Convert the color count into a string representation.
+  const colorCountStr = Object.entries(colorCount)
+    .map(([color, count]) => `{color:${color}}${count > 1 ? `:${count}` : ''}`)
+    .join(' && ');
+
+  return colorCountStr;
 }
 
 function updateTransitionNodeLabels(nodes, edges) {
   const updatedNodes = nodes.map(node => {
     if (node.type === 'transition') {
       const connectedEdges = edges.filter(edge => edge.target === node.id);
-      const edgeColorCounts = connectedEdges.reduce((acc, edge) => {
-        const color = extractColorFromEdgeLabel(edge);
-        if (color) {
-          acc[color] = (acc[color] || 0) + 1;
+      let labelParts = [];
+
+      connectedEdges.forEach(edge => {
+        // If the edge label has boolean logic, we process it directly
+        if (edge.data.label.includes('||') || edge.data.label.includes('&&')) {
+          // Process each boolean part separately
+          const booleanParts = edge.data.label.split(/(\|\||&&)/);
+          const processedParts = booleanParts.map(part => {
+            if (part === '||' || part === '&&') {
+              return part;
+            }
+            return extractColorFromEdgeLabel({ data: { label: part } });
+          });
+          labelParts.push(`(${processedParts.join(' ')})`);
+        } else {
+          // If the edge label is a simple color, we use the extractColorFromEdgeLabel function
+          labelParts.push(extractColorFromEdgeLabel(edge));
         }
-        return acc;
-      }, {});
+      });
 
-      const colorCountLabel = Object.entries(edgeColorCounts)
-        .map(([color, count]) => `${color}:${count}`)
-        .join(', ');
+      // Combine all parts into one string
+      const finalLabel = labelParts.join(' && ')
+        .replace(/\{color:(.+?)\}/g, '$1') 
+        .replace(/(\w+):\1/g, '$1:2') 
+        .replace(/1 &&/g, '') 
+        .replace(/&& 1/g, '');
 
-      const updatedNode = { ...node, data: { ...node.data, transitions: colorCountLabel }};
+      const updatedNode = { ...node, data: { ...node.data, transitions: finalLabel }};
       saveNodeToDB(updatedNode, userInfo.email);
       return updatedNode;
     }
@@ -98,7 +128,6 @@ function updateTransitionNodeLabels(nodes, edges) {
 
   return updatedNodes;
 }
-
 
 
   const onConnect = useCallback((params) => {
@@ -248,6 +277,7 @@ const deleteEdgeFromDB = async (edgeId, email) => {
   }
 }
 
+  
   const handleColorChange = (event) => {
     const newColor = event.target.value;
     setNodes(prevNodes => {
@@ -282,13 +312,27 @@ const deleteEdgeFromDB = async (edgeId, email) => {
     }
   };
 
-  const updateLabel = (nodeId, newLabel) => {
-    setNodes((nodes) =>
-      nodes.map((node) =>
-        node.id === nodeId ? { ...node, data: { ...node.data, label: newLabel } } : node
-      )
-    );
- };
+
+
+const updateLabel = (nodeId, newLabel) => {
+  let updateNode = null; 
+  setNodes((nodes) =>
+    nodes.map((node) => {
+      if (node.id === nodeId) {
+        const updatedNode = { ...node, data: { ...node.data, label: newLabel } };
+        updateNode = updatedNode;
+        return updatedNode;
+      }
+      return node;
+    })
+  );
+
+  if (updateNode) {
+    saveNodeToDB(updateNode, userInfo.email); 
+    setSelectedNode(updateNode);
+  }
+};
+
 
 
 const updateEdgeLabel = (edgeId, newLabel) => {
@@ -314,34 +358,7 @@ const updateEdgeLabel = (edgeId, newLabel) => {
   });
 };
 
-
-
- const handleAddToken = (color, pairs) => {
-    if (!selectedNode) return;
-    setNodes(prevNodes => {
-        const updatedNodes = prevNodes.map(node => {
-            if (node.id === selectedNode.id) {
-                const newToken = pairs.reduce((acc, pair) => {
-                    acc[pair.key] = pair.value;
-                    return acc;
-                }, { color });
-
-                let updateNode = {
-                    ...node,
-                    data: {
-                        ...node.data,
-                        tokens: [...node.data.tokens, newToken],
-                    },
-                };
-                saveNodeToDB(updateNode, userInfo.email)
-                return updateNode
-            }
-            return node;
-        });
-        return updatedNodes;
-    });
-};
-
+       
  const addPlaceNode = (position) => {
     const newNode = {
         id: uuidv4(),
@@ -691,6 +708,7 @@ const addTokenToNode = (event, token) => {
             data: { ...node.data, tokens: [...node.data.tokens, token] },
           };
           saveNodeToDB(updatedNode, userInfo.email);
+          setSelectedNode(updatedNode);
           return updatedNode;
         }
         return node;
@@ -713,23 +731,16 @@ const detectNodeIdFromEvent = (event) => {
 
   return (
     <div>
-      <Navbar userImage={userImage}/>
       <div className="d-flex">
+        <Navbar selectedNode={selectedNode} onDragStart={onDragStart}/>
+        
         <div className="flex-column flex-shrink-0" style={{ width: '13%'}}>
-          <LeftSidebar selectedNode={selectedNode} handleColorChange={handleColorChange} handleAddToken={handleAddToken} onDragStart={onDragStart}/>
+          <LeftSidebar selectedNode={selectedNode} onDragStart={onDragStart}/>       
         </div>
+
         <div className="flex-grow-1" style={{ height: '90vh' }}>
-          {/* <h1>Hello, {userInfo.email}, Your name is {userInfo.name.toLowerCase()}</h1> */}
-          {/* <button onClick={handleRunning}>Start Running</button> */}
-          {/* <button className={`btn btn-outline-dark`} onClick={addPlaceNode}>Add Place Node</button>
-          <button className={`btn btn-outline-dark`} onClick={addTransitionNode}>Add Transition Node</button> */}
-          <div className="btn btn-primary mb-2" draggable={!isSimulating}  onDragStart={(event) => onDragStart(event, 'place')}>
-            Drag Place Node
-          </div>
-          <div className="btn btn-secondary mb-2" draggable={!isSimulating} onDragStart={(event) => onDragStart(event, 'transition')}>
-            Drag Transition Node
-          </div>
-          <button className={`btn btn-outline-dark`} onClick={runSimulation} disabled={isSimulating}>Run Simulation</button>
+        <Toolbar />
+          <button className={`btn btn-outline-dark`} onClick={runSimulation}>Run Simulation</button>
           <input 
               type="text" 
               value={step} 
@@ -766,7 +777,7 @@ const detectNodeIdFromEvent = (event) => {
           </ReactFlowProvider>
         </div>
         <div className="flex-column flex-shrink-0" style={{ width: '13%' }}>
-          <RightSidebar selectedNode={selectedNode} selectedEdge={selectedEdge}/>
+          <RightSidebar selectedNode={selectedNode} selectedEdge={selectedEdge} handleColorChange={handleColorChange}/>
         </div>
       </div>
     </div>

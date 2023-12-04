@@ -29,36 +29,47 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import Add from '@mui/icons-material/Add';
 import { ListItemSecondaryAction } from '@mui/material';
 
-const pages =["File", "Edit", "View", "Run"]
+//const pages =["File", "Edit", "View", "Run"];
+
+const pages =[]
 
 const drawerWidth = 240;
 
-const Navbar = (props) => {
-    
-    const [anchorEl, setAnchorEl] = useState(null);
-    const open = Boolean(anchorEl);
-    const handleClick = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
+const Navbar = ({onDragStart}) => {
 
-    const [openToken, setOpen] = useState(true);
-
-    const handleToken = () => {
-        setOpen(!openToken);
-    };
-
-    function generate(element) {
-        return [0, 1, 2].map((value) =>
-            React.cloneElement(element, {
-            key: value,
-            }),
-        );
-        }
     return (
         <Box sx={{ display: 'flex' }}>
+            <CssBaseline />
+            <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+                <Toolbar>
+                    <Typography
+                        variant="h6"
+                        noWrap
+                        component="a"
+                        href="/"
+                        sx={{
+                        mr: 2,
+                        display: { xs: 'none', md: 'flex' },
+                        fontFamily: 'monospace',
+                        fontWeight: 800,
+                        letterSpacing: '.35rem',
+                        color: 'inherit',
+                        textDecoration: 'none',
+                        mx: 2
+                        }}
+                    >
+                        Statewise
+                    </Typography>
+                </Toolbar>
+            </AppBar>
+            
+        </Box>
+    );
+};
+
+export default Navbar;
+
+/*<Box sx={{ display: 'flex' }}>
         <CssBaseline />
         <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
             <Toolbar>
@@ -99,9 +110,9 @@ const Navbar = (props) => {
         >
             <Toolbar />
             <Box sx={{ overflow: 'auto' }}>
-            <List>
+            <List >
                 <ListItem
-                    secondaryAction={
+                    </List>secondaryAction={
                         <IconButton edge="end" aria-label="add" onClick={handleClick} aria-controls={open ? 'account-menu' : undefined}
                         aria-haspopup="true"
                         aria-expanded={open ? 'true' : undefined}>
@@ -109,17 +120,16 @@ const Navbar = (props) => {
                         </IconButton>
                     }
                     >
-                    <ListItemAvatar>
-                    </ListItemAvatar>
+                    <ListItemAvatar />
                     <ListItemText
-                        primary="Types"
+                        primary="Add"
                     />
                 </ListItem>
                 <ListItemButton onClick={handleToken}>
                     <ListItemIcon>
                         {openToken ? <ExpandLess /> : <ExpandMore />}
                     </ListItemIcon>
-                    <ListItemText primary="Token" />
+                    <ListItemText primary="Tokens" />
                 </ListItemButton>
                 <Collapse in={openToken} timeout="auto" unmountOnExit>
                     <List component="div" disablePadding sx={{"& .hidden-button": {
@@ -129,7 +139,7 @@ const Navbar = (props) => {
                         display: "flex"
                     }}}>
                         <ListItemButton>
-                            <ListItemAvatar></ListItemAvatar>
+                            <ListItemAvatar />
                             <ListItemText primary="Token1" />
                             <ListItemSecondaryAction edge="end" className='hidden-button'>
                                 <IconButton edge="end" size="small">
@@ -145,22 +155,66 @@ const Navbar = (props) => {
                         </ListItemButton>
                     </List>
                 </Collapse>
-                <ListItem>
-                    <ListItemAvatar>
-                        <ExpandMoreIcon />
-                    </ListItemAvatar>
-                    <ListItemText
-                        primary="Places"
-                    />
-                </ListItem>
-                <ListItem>
-                    <ListItemAvatar>
-                        <ExpandMoreIcon />
-                    </ListItemAvatar>
-                    <ListItemText
-                        primary="Transitions"
-                    />
-                </ListItem>
+                <ListItemButton onClick={handlePlace}>
+                    <ListItemIcon>
+                        {openPlace ? <ExpandLess /> : <ExpandMore />}
+                    </ListItemIcon>
+                    <ListItemText primary="Places" />
+                </ListItemButton>
+                <Collapse in={openPlace} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding sx={{"& .hidden-button": {
+                        display: "none"
+                        },
+                        "&:hover .hidden-button": {
+                        display: "flex"
+                    }}}>
+                        <ListItemButton draggable onDragStart={(event) => onDragStart(event, 'place')}>
+                            <ListItemIcon />
+                            <ListItemText primary="Place1" />
+                            <ListItemSecondaryAction edge="end" className='hidden-button'>
+                                <IconButton edge="end" size="small">
+                                    <AddIcon fontSize="small"/>
+                                </IconButton>
+                                <IconButton edge="end" size="small">
+                                    <DeleteIcon fontSize="small"/>
+                                </IconButton>
+                                <IconButton edge="end" size="small">
+                                    <EditIcon fontSize="small"/>
+                                </IconButton>
+                            </ListItemSecondaryAction>
+                        </ListItemButton>
+                    </List>
+                </Collapse>
+                <ListItemButton onClick={handleTransition}>
+                    <ListItemIcon>
+                        {openTransition ? <ExpandLess /> : <ExpandMore />}
+                    </ListItemIcon>
+                    <ListItemText primary="Transitions" />
+                </ListItemButton>
+                <Collapse in={openTransition} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding sx={{"& .hidden-button": {
+                        display: "none"
+                        },
+                        "&:hover .hidden-button": {
+                        display: "flex"
+                    }}}>
+                        <ListItemButton draggable onDragStart={(event) => onDragStart(event, 'transition')}>
+                            <ListItemIcon />
+                            <ListItemText primary="Transition1" />
+                            <ListItemSecondaryAction edge="end" className='hidden-button'>
+                                <IconButton edge="end" size="small">
+                                    <AddIcon fontSize="small"/>
+                                </IconButton>
+                                <IconButton edge="end" size="small">
+                                    <DeleteIcon fontSize="small"/>
+                                </IconButton>
+                                <IconButton edge="end" size="small">
+                                    <EditIcon fontSize="small"/>
+                                </IconButton>
+                            </ListItemSecondaryAction>
+                        </ListItemButton>
+                    </List>
+                </Collapse>
             </List>
             </Box>
         </Drawer>
@@ -212,8 +266,4 @@ const Navbar = (props) => {
             Transition Type
             </MenuItem>
         </Menu>
-        </Box>
-    );
-};
-
-export default Navbar;
+        </Box> */

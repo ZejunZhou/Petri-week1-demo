@@ -38,8 +38,17 @@ function TransitionNode({ data, id, isConnectable, selected}) {
   };
 
   return (
-    <>
-    <div style={{
+   <div style={{ position: 'relative', display: 'inline-block', textAlign:'center'}}>
+    <span style={{
+      width:'150px',
+      position: 'absolute', 
+      top: '-25px', 
+      left: '50%',
+      transform: 'translateX(-50%)', 
+    }}>
+      {data.label}
+    </span>
+     <div style={{
       border: `${selected ? '1px solid black': '1px'}`,
       borderRadius: '50%', 
       width: '130px', 
@@ -66,7 +75,16 @@ function TransitionNode({ data, id, isConnectable, selected}) {
         />
       {isEditing ? (
             <>
-              <input type="text" value={inputValue} onChange={handleInputChange} />
+              <input
+              type="text"
+              value={inputValue}
+              onChange={handleInputChange}
+              style={{
+                maxWidth: '120px', 
+                margin: '0 auto',  
+                display: 'block'   
+              }}
+            />
               <button onClick={handleSubmit}>Submit</button>
             </>
           ) : (
@@ -79,7 +97,7 @@ function TransitionNode({ data, id, isConnectable, selected}) {
             <Token key={index}  color={token.color} />
       ))}
     </div>
-    </>
+    </div>
   );
 }
 

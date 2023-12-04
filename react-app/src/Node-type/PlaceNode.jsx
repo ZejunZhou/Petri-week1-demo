@@ -1,5 +1,6 @@
 import { Handle, Position, NodeResizer} from 'reactflow';
 import { useState } from 'react';
+import './style.css'
 
 function Token({ color }) {
   return (
@@ -39,20 +40,29 @@ function PlaceNode({ data, id, isConnectable, selected }) {
   };
 
   return (
-    <>
-       <div
-        data-nodeid={id} 
-        style={{
-          border: `${selected ? '1px solid black' : '1px'}`,
-          width: '150px', 
-          height: '100px',
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          flexDirection: 'column', 
-        }}
-        onClick={toggleEditing}
-      >
+    <div style={{ position: 'relative', display: 'inline-block', textAlign:'center'}}>
+    <span style={{
+      width:'150px',
+      position: 'absolute', 
+      top: '-30px', 
+      left: '50%',
+      transform: 'translateX(-50%)', 
+    }}>
+      {data.label}
+    </span>
+    <div
+      data-nodeid={id} 
+      style={{
+        border: `${selected ? '1px solid black' : '1px'}`,
+        width: '150px', 
+        height: '100px',
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        flexDirection: 'column', 
+      }}
+      onClick={toggleEditing}
+    >
         <Handle
           type="target"
           position={Position.Left}
@@ -68,7 +78,16 @@ function PlaceNode({ data, id, isConnectable, selected }) {
         />
         {isEditing ? (
             <>
-              <input type="text" value={inputValue} onChange={handleInputChange} />
+               <input
+                type="text"
+                value={inputValue}
+                onChange={handleInputChange}
+                style={{
+                  maxWidth: '120px', 
+                  margin: '0 auto',  
+                  display: 'block'   
+                }}
+              />
               <button onClick={handleSubmit}>Submit</button>
             </>
           ) : (
@@ -85,7 +104,7 @@ function PlaceNode({ data, id, isConnectable, selected }) {
           ))}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

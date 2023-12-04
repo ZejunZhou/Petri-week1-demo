@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { EdgeProps, getBezierPath, EdgeLabelRenderer, BaseEdge, NodeToolbar } from 'reactflow';
-
+import { EdgeProps, getBezierPath, EdgeLabelRenderer, BaseEdge, NodeToolbar, useNodes } from 'reactflow';
+import { getSmartEdge } from '@tisoap/react-flow-smart-edge'
 
 const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, markerEnd, style}) => {
 
@@ -31,6 +31,20 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
     targetPosition,
   });
 
+  const nodes = useNodes()
+
+  const getSmartEdgeResponse = getSmartEdge({
+		sourcePosition,
+		targetPosition,
+		sourceX,
+		sourceY,
+		targetX,
+		targetY,
+		nodes
+	})
+
+  const { edgeCenterX, edgeCenterY, svgPathString } = getSmartEdgeResponse
+
   const toggleEditing = () => {
     setIsEditing(true);
   };
@@ -51,7 +65,7 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
       <path
         id={id}
         className="react-flow__edge-path"
-        d={edgePath}
+        d={svgPathString}
         markerEnd={markerEnd}
         style={edgeStyle}
       />
@@ -59,7 +73,7 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
           <div
             style={{
               position: 'absolute',
-              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+              transform: `translate(-50%, -50%) translate(${edgeCenterX}px,${edgeCenterY}px)`,
               background: '#ffcc00',
               padding: 10,
               borderRadius: 5,

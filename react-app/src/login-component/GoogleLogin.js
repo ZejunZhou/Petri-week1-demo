@@ -3,6 +3,8 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {useEffect } from 'react';
+import { Button } from '@mui/material';
+import GoogleIcon from '@mui/icons-material/Google';
 
 
 const GoogleLogin = ({isLogin, setLogin, userInfo, setUserInfo}) => {
@@ -49,10 +51,11 @@ const GoogleLogin = ({isLogin, setLogin, userInfo, setUserInfo}) => {
 
 
   return (
-   <button type="button" onClick={googleLogin}> 
-      <img src="https://img.icons8.com/color/16/000000/google-logo.png" alt="google"/>
-      <span>Continue with Google</span>
-   </button>
+   <div style={{textAlign: "center", marginTop: "40px"}}>
+    <Button variant="contained" onClick={googleLogin} startIcon={<GoogleIcon />} size="large" style={{textTransform: 'none', fontSize: '16px'}}> 
+      <b>Continue with Google</b>
+    </Button>
+   </div>
   );
 };
 
