@@ -1,17 +1,13 @@
-import React from 'react';
-import { EdgeProps, getBezierPath, EdgeLabelRenderer, BaseEdge, NodeToolbar } from 'reactflow';
-
-
-const calculateControlOffset = (id) => {
-  let offset = 0;
-  for (let i = 0; i < id.length; i++) {
-    offset += id.charCodeAt(i);
-  }
-  return offset % 20; 
-};
+import React, { useState } from 'react';
+import { EdgeProps, getBezierPath, EdgeLabelRenderer, BaseEdge, NodeToolbar, useNodes } from 'reactflow';
+import { getSmartEdge } from '@tisoap/react-flow-smart-edge'
 
 const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, markerEnd, style}) => {
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [inputValue, setInputValue] = useState(data.label);
+  
+  // parse label data for display edge's color
   function parseLabelData(label) {
     if (!label.startsWith('{') || !label.endsWith('}')) {
       return {};
@@ -25,8 +21,6 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
 
   const labelData = parseLabelData(data.label);
   const edgeStyle = labelData.color ? { ...style, stroke: labelData.color } : style;
-  
-  const offset = calculateControlOffset(id);
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -37,20 +31,41 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
     targetPosition,
   });
 
-  const handleInputChange = (event) => {
-    data.updateEdgeLabel(id, event.target.value);
+  const nodes = useNodes()
+
+  const getSmartEdgeResponse = getSmartEdge({
+		sourcePosition,
+		targetPosition,
+		sourceX,
+		sourceY,
+		targetX,
+		targetY,
+		nodes
+	})
+
+  const { edgeCenterX, edgeCenterY, svgPathString } = getSmartEdgeResponse
+
+  const toggleEditing = () => {
+    setIsEditing(true);
   };
 
-  const handleMouseDown = (e) => {
-   e.stopPropagation();
- };
+  const handleInputChange = (event) => {
+    setInputValue(event.target.value);
+  };
+
+  const handleSubmit = (e) => {
+    e.stopPropagation(); 
+    data.updateEdgeLabel(id, inputValue);
+    setIsEditing(false); 
+  };
+
 
   return (
     <>
       <path
         id={id}
         className="react-flow__edge-path"
-        d={edgePath}
+        d={svgPathString}
         markerEnd={markerEnd}
         style={edgeStyle}
       />
@@ -58,7 +73,7 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
           <div
             style={{
               position: 'absolute',
-              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+              transform: `translate(-50%, -50%) translate(${edgeCenterX}px,${edgeCenterY}px)`,
               background: '#ffcc00',
               padding: 10,
               borderRadius: 5,
@@ -67,9 +82,16 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
               pointerEvents: 'all' 
             }}
             className="nodrag nopan"
+            onClick={toggleEditing}
           >
-            {data.label}
-            <input type="text" value={data.label} onChange={handleInputChange} />
+            {isEditing ? (
+            <>
+              <input type="text" value={inputValue} onChange={handleInputChange} />
+              <button onClick={handleSubmit}>Submit</button>
+            </>
+          ) : (
+            <span>{data.label}</span>
+          )}
           </div>
        </EdgeLabelRenderer>
       </>

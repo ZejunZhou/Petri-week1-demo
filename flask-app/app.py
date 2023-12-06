@@ -49,6 +49,7 @@ session.execute("""
         label text,
         style map<text, text>,
         tokens list<frozen<map<text, text>>>,
+        transitions text,
         PRIMARY KEY (customer_email, node_id)
     );
 """)
@@ -220,10 +221,10 @@ def save_node():
         node = request.json
         session.execute(
             """
-            INSERT INTO nodes (customer_email, node_id, type, position, label, style, tokens)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO nodes (customer_email, node_id, type, position, label, style, tokens, transitions)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """,
-            (node['customer_email'], node['id'], node['type'], node['position'], node['data']['label'], node['style'], node['data']['tokens'])
+            (node['customer_email'], node['id'], node['type'], node['position'], node['data']['label'], node['style'], node['data']['tokens'], node['data']['transitions'])
         )
         return jsonify({"status": "success", "message": "node inserted successfully"}), 200
     except Exception as e:
@@ -305,7 +306,7 @@ def get_nodes():
                 'id': row.node_id, 
                 'type': row.type, 
                 'position': dict(row.position), 
-                'data': {'label':row.label},
+                'data': {'label':row.label, 'transitions':row.transitions},
                 'style': dict(row.style),
             }
             if row.tokens is not None:
@@ -342,7 +343,7 @@ def show_nodes():
             'node_id': row.node_id, 
             'type': row.type, 
             'position': dict(row.position), 
-            'data': {'label':row.label},
+            'data': {'label':row.label, 'transitions':row.transitions},
             'style': dict(row.style),
         }
         if row.tokens is not None:

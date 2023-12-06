@@ -20,37 +20,14 @@ import TextField from '@mui/material/TextField';
 
 const drawerWidth = 240;
 
-const LeftSidebar = ({ selectedNode, handleColorChange, handleAddToken, onDragStart}) => {
-    const [tokenPairs, setTokenPairs] = useState([{ key: '', value: '' }]);
-    const [tokenColor, setTokenColor] = useState('#000000');
+const LeftSidebar = ({ selectedNode, onDragStart}) => {
     const [token, setToken] = useState({ color: 'red' }); 
 
     const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setToken({ ...token, [name]: value });
+        const { name, value } = event.target;
+        setToken({ ...token, [name]: value });
     };
 
-    const handlePairChange = (index, field, value) => {
-        const newPairs = [...tokenPairs];
-        newPairs[index][field] = value;
-        setTokenPairs(newPairs);
-    };
-
-    const addPair = () => {
-        setTokenPairs([...tokenPairs, { key: '', value: '' }]);
-    };
-
-    const removePair = (index) => {
-        const newPairs = [...tokenPairs];
-        newPairs.splice(index, 1);
-        setTokenPairs(newPairs);
-    };
-
-    const handleSubmit = () => {
-        handleAddToken(tokenColor, tokenPairs);
-        setTokenPairs([{ key: '', value: '' }]);
-        setTokenColor('#000000');
-    };
 
     return (
         <Box>
@@ -123,33 +100,7 @@ const LeftSidebar = ({ selectedNode, handleColorChange, handleAddToken, onDragSt
                             </div>
                     </ListItem>
                 </List>
-                {selectedNode && selectedNode.type === 'place' && <div className="bg-light p-3 border">
-                {selectedNode.type === 'place' ? <h5>Create Token</h5> : <h5>Set Transition</h5>}
-                <input type="color" value={tokenColor} onChange={(e) => setTokenColor(e.target.value)} />
-
-                {tokenPairs.map((pair, index) => (
-                    <div key={index}>
-                        <input
-                            type="text"
-                            placeholder='key'
-                            value={pair.key}
-                            onChange={(e) => handlePairChange(index, 'key', e.target.value)}
-                        />
-                        <input
-                            type="text"
-                            placeholder="value"
-                            value={pair.value}
-                            onChange={(e) => handlePairChange(index, 'value', e.target.value)}
-                        />
-                        <button className={`btn btn-sm btn-outline-dark`} onClick={() => removePair(index)}>Remove</button>
-                    </div>
-                ))}
-                
-                <button className={`btn btn-sm btn-outline-dark`} onClick={addPair}>Add More</button>
-                <button className={`btn btn-sm btn-outline-dark`} onClick={handleSubmit}>Submit</button>
-                </div>}
-
-                
+               
                 </Box>
             </Drawer>
             <Box component="main" sx={{ flexGrow: 1, p: 3 }}>

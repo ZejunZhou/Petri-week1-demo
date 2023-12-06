@@ -37,8 +37,14 @@ const RightSidebar = ({ selectedNode, selectedEdge, handleColorChange }) => {
         return (
             <>
                 <div className="bg-light p-3 border">
-                    <h5>{selectedNode.type === 'place' ? 'Token' : 'Transition'}</h5>
-                    <ul>{selectedNode.data.tokens && selectedNode.data.tokens.length > 0 ? renderColorCounts() : <li>No token</li>}</ul>
+                    <h5>{selectedNode.type === 'place' ? 'Token' : 'Transition Summary'}</h5>
+                    {
+                        selectedNode.type === 'place'
+                        ? (selectedNode.data.tokens && selectedNode.data.tokens.length > 0 
+                            ? renderColorCounts() 
+                            : <li>No token</li>)
+                        : <div>{selectedNode.data.transitions}</div>
+                    }
                 </div>
                 <div className="bg-light p-3 border">
                     <h5>Node ID</h5>
@@ -54,6 +60,7 @@ const RightSidebar = ({ selectedNode, selectedEdge, handleColorChange }) => {
                         value={selectedNode ? selectedNode.style.backgroundColor : '#FFFFFF'}
                         onChange={handleColorChange}
                     />
+                    
                 </div>
                 <div className="bg-light p-3 border">
                     <h5>Position</h5>
@@ -64,7 +71,6 @@ const RightSidebar = ({ selectedNode, selectedEdge, handleColorChange }) => {
                     <h5>Label</h5>
                     <p>{selectedNode.data.label}</p>
                 </div>
-                {/* 添加其他节点信息的渲染逻辑 */}
             </>
         );
     };
@@ -85,11 +91,11 @@ const RightSidebar = ({ selectedNode, selectedEdge, handleColorChange }) => {
                     <p>{selectedEdge.type}</p>
                 </div>
                 <div className="bg-light p-3 border">
-                    <h5>Source</h5>
+                    <h5>Source ID</h5>
                     <p>{selectedEdge.source}</p>
                 </div>
                 <div className="bg-light p-3 border">
-                    <h5>Target</h5>
+                    <h5>Target ID</h5>
                     <p>{selectedEdge.target}</p>
                 </div>
             </>
