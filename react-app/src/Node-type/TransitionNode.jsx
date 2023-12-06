@@ -50,9 +50,8 @@ function TransitionNode({ data, id, isConnectable, selected}) {
     </span>
      <div style={{
       border: `${selected ? '1px solid black': '1px'}`,
-      borderRadius: '50%', 
-      width: '130px', 
-      height: '130px', 
+      width: '150px', 
+      height: '100px', 
       display: 'flex', 
       justifyContent: 'center', 
       alignItems: 'center',

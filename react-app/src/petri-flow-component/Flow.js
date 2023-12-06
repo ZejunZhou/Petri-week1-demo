@@ -16,6 +16,13 @@ import ArrowEdge from "../Edge-type/ArrowEdge";
 
 
 import Toolbar from '@mui/material/Toolbar';
+import Grid from '@mui/material/Grid';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
+import Snackbar, { SnackbarOrigin } from '@mui/material/Snackbar';
+import SnackbarContent from '@mui/material/SnackbarContent';
 
 const rfStyle = {
   backgroundColor: 'none',
@@ -23,17 +30,17 @@ const rfStyle = {
 
 const PlaceStyle = {
   backgroundColor: '#B0D9B1',
-  width: '150px', 
-  height: '100px',
+  borderRadius: '50%', 
+  width: '130px', 
+  height: '130px',
   display: 'flex', 
   justifyContent: 'center', 
   alignItems: 'center',
 };
 
 const transitionStyle = {
-    borderRadius: '50%', 
-    width: '130px', 
-    height: '130px', 
+    width: '150px', 
+    height: '100px', 
     display: 'flex', 
     justifyContent: 'center', 
     alignItems: 'center',
@@ -68,6 +75,34 @@ function Flow({userInfo}) {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [isSimulating, setIsSimulating] = useState(false); // marked as true when simulation start
+  const [arcAlert, setArcAlert] = useState({
+    open: false,
+    vertical: 'bottom',
+    horizontal: 'right'
+  });
+
+  const { vertical, horizontal, open } = arcAlert;
+
+  const handleClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+
+    setArcAlert({ ...arcAlert, open: false });
+  };
+
+  const action = (
+    <React.Fragment>
+      <IconButton
+        size="small"
+        aria-label="close"
+        color="inherit"
+        onClick={handleClose}
+      >
+        <CloseIcon fontSize="small" />
+      </IconButton>
+    </React.Fragment>
+  );
 
   
 function extractColorFromEdgeLabel(edge) {
@@ -151,7 +186,7 @@ function updateTransitionNodeLabels(nodes, edges) {
           alert('An edge already exists between these nodes' + existingEdge.id);
         }
     } else {
-        alert('You Can Only Connect Place node to Transition Node');
+        setArcAlert({ ...arcAlert, open: true });
     }
   }, [nodes, setEdges, edges]);
 
@@ -780,6 +815,22 @@ const detectNodeIdFromEvent = (event) => {
           <RightSidebar selectedNode={selectedNode} selectedEdge={selectedEdge} handleColorChange={handleColorChange}/>
         </div>
       </div>
+      <Snackbar
+        anchorOrigin={{ vertical, horizontal }}
+        open={open}
+        autoHideDuration={2000}
+        onClose={handleClose}
+        message="Only connect Place node to Transition node!"
+        key={vertical + horizontal}
+        action={action}
+        ContentProps={{
+          sx: {
+            background: "#ba000d",
+            fontWeight: 'medium',
+            fontSize: 16
+          }
+        }}
+      />
     </div>
   );
 }

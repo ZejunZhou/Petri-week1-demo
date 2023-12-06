@@ -54,8 +54,9 @@ function PlaceNode({ data, id, isConnectable, selected }) {
       data-nodeid={id} 
       style={{
         border: `${selected ? '1px solid black' : '1px'}`,
-        width: '150px', 
-        height: '100px',
+        borderRadius: '50%', 
+        width: '130px', 
+        height: '130px',
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center',
