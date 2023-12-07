@@ -87,7 +87,7 @@ function TransitionNode({ data, id, isConnectable, selected}) {
               <button onClick={handleSubmit}>Submit</button>
             </>
           ) : (
-            <span>{data.label}</span>
+            <span>{}</span>
           )}
       <div>
          <strong>{data.transitions}</strong>

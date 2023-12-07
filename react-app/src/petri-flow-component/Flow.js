@@ -16,20 +16,18 @@ import ArrowEdge from "../Edge-type/ArrowEdge";
 
 
 import Toolbar from '@mui/material/Toolbar';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import Snackbar, { SnackbarOrigin } from '@mui/material/Snackbar';
 import SnackbarContent from '@mui/material/SnackbarContent';
+
 
 const rfStyle = {
   backgroundColor: 'none',
 };
 
 const PlaceStyle = {
-  backgroundColor: '#B0D9B1',
+  backgroundColor: '#D3D3D3',
   borderRadius: '50%', 
   width: '130px', 
   height: '130px',
@@ -45,7 +43,7 @@ const transitionStyle = {
     justifyContent: 'center', 
     alignItems: 'center',
     flexDirection: 'column', 
-    backgroundColor: '#B0D9B1',
+    backgroundColor: '#D3D3D3',
 }
 
 
@@ -75,23 +73,19 @@ function Flow({userInfo}) {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [isSimulating, setIsSimulating] = useState(false); // marked as true when simulation start
-  const [arcAlert, setArcAlert] = useState({
-    open: false,
-    vertical: 'bottom',
-    horizontal: 'right'
-  });
-
-  const { vertical, horizontal, open } = arcAlert;
+  const [openAlert, setOpen] = useState(false);
+  const [snackPack, setSnackPack] = useState([]);
+  const [messageInfo, setMessageInfo] = useState(undefined);
 
   const handleClose = (event, reason) => {
     if (reason === 'clickaway') {
       return;
     }
 
-    setArcAlert({ ...arcAlert, open: false });
+    setOpen(false)
   };
 
-  const action = (
+  const arcAction = (
     <React.Fragment>
       <IconButton
         size="small"
@@ -103,6 +97,23 @@ function Flow({userInfo}) {
       </IconButton>
     </React.Fragment>
   );
+
+  useEffect(() => {
+    if (snackPack.length && !messageInfo) {
+      // Set a new snack when we don't have an active one
+      setMessageInfo({ ...snackPack[0] });
+      setSnackPack((prev) => prev.slice(1));
+      setOpen(true);
+    } else if (snackPack.length && messageInfo && openAlert) {
+      // Close an active snack when a new one is added
+      setOpen(false);
+    }
+
+  }, [snackPack, messageInfo, openAlert]);
+
+  const handleExited = () => {
+    setMessageInfo(undefined);
+  };
 
   
 function extractColorFromEdgeLabel(edge) {
@@ -183,10 +194,12 @@ function updateTransitionNodeLabels(nodes, edges) {
           });
           saveEdgeToDB(newEdge, userInfo.email);
         } else {
-          alert('An edge already exists between these nodes' + existingEdge.id);
+          let message = 'An edge already exists between these nodes!';
+          setSnackPack((prev) => [...prev, { message, key: new Date().getTime() }]);
         }
     } else {
-        setArcAlert({ ...arcAlert, open: true });
+      let message = "Only connect Place node to Transition node!";
+      setSnackPack((prev) => [...prev, { message, key: new Date().getTime() }]);
     }
   }, [nodes, setEdges, edges]);
 
@@ -816,13 +829,14 @@ const detectNodeIdFromEvent = (event) => {
         </div>
       </div>
       <Snackbar
-        anchorOrigin={{ vertical, horizontal }}
-        open={open}
-        autoHideDuration={2000}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        open={openAlert}
+        autoHideDuration={3000}
         onClose={handleClose}
-        message="Only connect Place node to Transition node!"
-        key={vertical + horizontal}
-        action={action}
+        TransitionProps={{ onExited: handleExited }}
+        message={messageInfo ? messageInfo.message : undefined}
+        key={messageInfo ? messageInfo.key : undefined}
+        action={arcAction}
         ContentProps={{
           sx: {
             background: "#ba000d",

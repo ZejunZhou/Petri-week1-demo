@@ -92,7 +92,7 @@ function PlaceNode({ data, id, isConnectable, selected }) {
               <button onClick={handleSubmit}>Submit</button>
             </>
           ) : (
-            <span>{data.label}</span>
+            <span>{}</span>
           )}
         <div style={{
           display: 'flex',
