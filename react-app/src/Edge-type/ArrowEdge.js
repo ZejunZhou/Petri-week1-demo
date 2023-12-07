@@ -131,8 +131,8 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
                 className="nodrag nopan"
                 onClick={toggleEditing}>
                   <svg height="300" width="300">
-                    <circle cx='130' cy='150' r="10" fill={`${labelData[0]}`} />
-                    <circle cx='150' cy='150' r="10" fill={`${labelData[2]}`} />
+                    <circle cx='135' cy='150' r="10" fill={`${labelData[0]}`} />
+                    <circle cx='145' cy='150' r="10" fill={`${labelData[2]}`} />
                   </svg>
                 </div>
             
