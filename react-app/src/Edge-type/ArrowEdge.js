@@ -41,6 +41,7 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
    labelColor = `linear-gradient(90deg, ${labelData[0]} 50%, ${labelData[2]} 50%)`
   }
   // if guard function is an "and"
+  console.log(labelColor)
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -106,7 +107,19 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
               <input type="text" value={inputValue} onChange={handleInputChange} />
               <button onClick={handleSubmit}>Submit</button>
             </div>
-          ) : (
+          ) : (labelColor === undefined? <div style={{
+            position: 'absolute',
+            transform: `translate(-50%, -50%) translate(${edgeCenterX}px,${edgeCenterY}px)`,
+            background: `black`,
+            padding: 10,
+            borderRadius: '50%',
+            fontSize: 12,
+            fontWeight: 700,
+            pointerEvents: 'all' 
+          }}
+          className="nodrag nopan"
+          onClick={toggleEditing}>
+          </div> : (
             (labelData.length === 1 || labelData[1] === "||") ?
               <div style={{
                 position: 'absolute',
@@ -136,6 +149,7 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
                   </svg>
                 </div>
             
+            )
           )}
        </EdgeLabelRenderer>
       </>

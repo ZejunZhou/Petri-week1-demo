@@ -68,7 +68,7 @@ const RightSidebar = ({ selectedNode, selectedEdge, handleColorChange }) => {
                     <p>y: {selectedNode.position.y}</p>
                 </div>
                 <div className="bg-light p-3 border">
-                    <h5>Label</h5>
+                    <h5>Name</h5>
                     <p>{selectedNode.data.label}</p>
                 </div>
             </>
