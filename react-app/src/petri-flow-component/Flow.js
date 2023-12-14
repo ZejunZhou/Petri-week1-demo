@@ -521,6 +521,8 @@ const runSimulation = () => {
         const outgoingEdges = edges.filter(edge => edge.source === transitionNode.id);
         if (outgoingEdges.length === 0) {
           transitionNode.style = { ...transitionNode.style, backgroundColor: '#FF8080' };
+          let message = 'There is no output place node for this transition!';
+          setSnackPack((prev) => [...prev, { message, key: new Date().getTime() }]);
         }
       });
 
