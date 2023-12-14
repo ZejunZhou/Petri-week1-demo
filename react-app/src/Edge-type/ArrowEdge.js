@@ -11,7 +11,7 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(data.label);
   
-  // parse label data for display edge's color (currently working with 1 color and "or")
+  // parse label data for display edge's color (currently working with 1 color)
   function parseLabelData(label) {
     if (!label.startsWith('{') || !label.endsWith('}')) {
       return {};
@@ -41,7 +41,8 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
    labelColor = `linear-gradient(90deg, ${labelData[0]} 50%, ${labelData[2]} 50%)`
   }
   // if guard function is an "and"
-  console.log(labelColor)
+  console.log(labelData[4])
+  //console.log(labelColor)
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -92,6 +93,7 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
       />
       <EdgeLabelRenderer>
           {isEditing ? (
+            //if the edge is being edit
             <div style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${edgeCenterX}px,${edgeCenterY}px)`,
@@ -107,7 +109,9 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
               <input type="text" value={inputValue} onChange={handleInputChange} />
               <button onClick={handleSubmit}>Submit</button>
             </div>
-          ) : (labelColor === undefined? <div style={{
+          ) : (labelColor === undefined? 
+            // default edge label 
+          <div style={{
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${edgeCenterX}px,${edgeCenterY}px)`,
             background: `black`,
@@ -119,8 +123,10 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
           }}
           className="nodrag nopan"
           onClick={toggleEditing}>
-          </div> : (
-            (labelData.length === 1 || labelData[1] === "||") ?
+          </div> : 
+          // if label color is defined
+          (
+            (labelData.length === 1 || (labelData.length === 3 && labelData[1] === "||")) ?
               <div style={{
                 position: 'absolute',
                 transform: `translate(-50%, -50%) translate(${edgeCenterX}px,${edgeCenterY}px)`,
@@ -144,8 +150,23 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
                 className="nodrag nopan"
                 onClick={toggleEditing}>
                   <svg height="300" width="300">
-                    <circle cx='135' cy='150' r="10" fill={`${labelData[0]}`} />
-                    <circle cx='145' cy='150' r="10" fill={`${labelData[2]}`} />
+                    <g>
+                        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor={labelData[2]} Opacity="100%" />
+                          <stop offset="50%" stopColor={labelData[2]} Opacity="100%"/>
+                          <stop offset="50%" stopColor={labelData.length === 5? labelData[4] : labelData[2]} Opacity="100%"/>
+                          <stop offset="100%" stopColor={labelData.length === 5? labelData[4] : labelData[2]} Opacity="100%"/>
+                        </linearGradient>
+                        <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor={labelData.length === 5 && labelData[1] === "||" ? labelData[0] : labelData[2]} Opacity="100%" />
+                          <stop offset="50%" stopColor={labelData.length === 5 && labelData[1] === "||" ? labelData[0] : labelData[2]} Opacity="100%"/>
+                          <stop offset="50%" stopColor={labelData[2]} Opacity="100%"/>
+                          <stop offset="100%" stopColor={labelData[2]} Opacity="100%"/>
+                        </linearGradient>
+                      </g>
+                    <circle cx='133' cy='150' r="10" fill={labelData[1] === "||"? "url(#grad2)" : `${labelData[0]}`} />
+                    <circle cx='148' cy='150' r="10" fill={labelData[3] === "||" && labelData[1] === "&&"? "url(#grad1)" : 
+                      labelData[3] === "&&" && labelData[1] === "||"? `${labelData[4]}`: `${labelData[2]}`} />
                   </svg>
                 </div>
             
