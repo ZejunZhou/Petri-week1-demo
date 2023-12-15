@@ -1,0 +1,13 @@
+authtoken: 2WMJ2Zs4liHTnWFzRRmwaq1i6f8_5K5VPMmFraecfNgxetAR9
+version: 2
+
+tunnels:
+  react-frontend:
+    addr: react-frontend:3000
+    proto: http
+    name: react-frontend
+
+  flask-backend:
+    addr: flask-backend:5001
+    proto: http
+    name: flask-backend

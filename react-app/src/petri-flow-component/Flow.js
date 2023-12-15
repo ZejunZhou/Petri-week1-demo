@@ -14,12 +14,13 @@ import { v4 as uuidv4 } from 'uuid'
 import styles from './Flow.module.css'
 import ArrowEdge from "../Edge-type/ArrowEdge";
 
-
+import TextField from '@mui/material/TextField';
 import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import Snackbar, { SnackbarOrigin } from '@mui/material/Snackbar';
 import SnackbarContent from '@mui/material/SnackbarContent';
+import { SelectProvider } from "@mui/base";
 
 
 const rfStyle = {
@@ -62,7 +63,7 @@ const nodeTypes = {
 const edgeTypes = {arrow: ArrowEdge};
 
 
-function Flow({userInfo}) {
+function Flow({userInfo, backendUrl}) {
   const { inputText } = useTextUpdater(); 
   const [nodes, setNodes, onNodesChange] = useNodesState(barborNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -76,6 +77,7 @@ function Flow({userInfo}) {
   const [openAlert, setOpen] = useState(false);
   const [snackPack, setSnackPack] = useState([]);
   const [messageInfo, setMessageInfo] = useState(undefined);
+  const isSimulatingRef = useRef(isSimulating);
 
   const handleClose = (event, reason) => {
     if (reason === 'clickaway') {
@@ -297,7 +299,7 @@ function updateTransitionNodeLabels(nodes, edges) {
 
   const saveNodeToDB = async (node, email) => {
     try {
-      await axios.post('http://localhost:5001/insert_nodes', {...node, customer_email:email});
+      await axios.post(backendUrl +'/insert_nodes', {...node, customer_email:email});
     } catch (error) {
       console.error('Error saving node:', error);
     }
@@ -306,7 +308,8 @@ function updateTransitionNodeLabels(nodes, edges) {
   const deleteNodeFromDB = async (nodeId, email) => {
     //console.log(nodeId, email);
     try {
-        const response = await axios.delete('http://localhost:5001/delete_node', {params: {id:nodeId, customer_email:email}});
+        const response = await axios.delete(backendUrl + '/delete_node', {params: {id:nodeId, customer_email:email}, headers:{
+        'ngrok-skip-browser-warning': 'true'}});
         return response;
     } catch (error) {
         console.error('Error during the node deletion:', error);
@@ -317,7 +320,8 @@ function updateTransitionNodeLabels(nodes, edges) {
 const deleteEdgeFromDB = async (edgeId, email) => {
   console.log(edgeId)
   try{
-    const response = await axios.delete('http://localhost:5001/delete_edge', {params: {id:edgeId, customer_email:email}})
+    const response = await axios.delete(backendUrl + '/delete_edge', {params: {id:edgeId, customer_email:email}, headers: {
+            'ngrok-skip-browser-warning': 'true'}})
     return response;
   } catch(error){
       console.error('Error during the edge deletion', error);
@@ -354,7 +358,7 @@ const deleteEdgeFromDB = async (edgeId, email) => {
 
   const saveEdgeToDB = async (edge, email) => {
     try {
-      await axios.post('http://localhost:5001/insert_edges', {...edge, customer_email:email});
+      await axios.post(backendUrl + '/insert_edges', {...edge, customer_email:email});
     } catch (error) {
       console.error('Error saving edge:', error);
     }
@@ -434,8 +438,10 @@ const addTransitionNode = (position) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-          const nodesResponse = await axios.get('http://localhost:5001/get_nodes', { params: {email: userInfo.email}});
-          const edgesResponse = await axios.get('http://localhost:5001/get_edges', { params: {email: userInfo.email}});
+          const nodesResponse = await axios.get(backendUrl + '/get_nodes', { params: {email: userInfo.email}, headers:{
+            'ngrok-skip-browser-warning': 'true'}});
+          const edgesResponse = await axios.get(backendUrl + '/get_edges', { params: {email: userInfo.email}, headers:{
+            'ngrok-skip-browser-warning': 'true'}});
           
           let updatedNodes = [];
           for (const node of nodesResponse.data) {
@@ -493,8 +499,13 @@ const addTransitionNode = (position) => {
     return node.style && node.style.backgroundColor ? node.style.backgroundColor : '#eeeee2';
   };
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-const runSimulation = () => {
+useEffect(() => {
+  isSimulatingRef.current = isSimulating;
+}, [isSimulating]);
+
+const runSimulation = async () => {
   if (isSimulating) return; // check if it simulating
 
   if (step <= 0){
@@ -503,16 +514,41 @@ const runSimulation = () => {
   }
 
   setIsSimulating(true);
+  isSimulatingRef.current = true;
 
   for (let currentStep = 0; currentStep < getMaxSteps(); currentStep++) {
 
-    setTimeout(() => {
+    console.log("the state of simulating",isSimulatingRef.current)
+    console.log("current step is ", currentStep)
+    if (!isSimulatingRef.current) {
+        const savePromises = nodes.map(node => saveNodeToDB(node, userInfo.email))
+        .concat(edges.map(edge => saveEdgeToDB(edge, userInfo.email)));
+
+      Promise.all(savePromises)
+        .then(() => {
+          console.log('All nodes and edges have been saved to the database.');
+        })
+        .catch(error => {
+          console.error('An error occurred while saving to the database:', error);
+        });
+        break;
+    }
+    
       resetTransitionColors();
 
       const fireableTransitions = getFireableTransitions();
       const allTransitions = nodes.filter(node => node.type === 'transition');
 
       allTransitions.forEach(transitionNode => {
+        const incomingEdges = edges.filter(edge => edge.target === transitionNode.id);
+
+        if (incomingEdges.length === 0) {
+           transitionNode.style = { ...transitionNode.style, backgroundColor: '#FF8080' };
+           let message = 'There is no imcoming place node for this transition!';
+           setSnackPack((prev) => [...prev, { message, key: new Date().getTime() }]);
+           return
+        }
+
         if (!fireableTransitions.includes(transitionNode.id)) {
           transitionNode.style = { ...transitionNode.style, backgroundColor: '#B6BBC4' };
         } else {
@@ -523,16 +559,19 @@ const runSimulation = () => {
           transitionNode.style = { ...transitionNode.style, backgroundColor: '#FF8080' };
           let message = 'There is no output place node for this transition!';
           setSnackPack((prev) => [...prev, { message, key: new Date().getTime() }]);
+          return
         }
       });
-
 
       setNodes([...nodes]);
       if (currentStep === getMaxSteps() - 1) {
         setIsSimulating(false); // marked as false when simulation is down
       }
-    }, 1000 * currentStep);
+
+    await sleep(1000);
   }
+
+  setIsSimulating(false);
 
   //save node status after simulation to db
   setTimeout(() => {
@@ -790,13 +829,29 @@ const detectNodeIdFromEvent = (event) => {
 
         <div className="flex-grow-1" style={{ height: '90vh', paddingTop: '0.5rem' }}>
         <Toolbar />
-          <button className={`btn btn-outline-dark`} onClick={runSimulation}>Run Simulation</button>
-          <input 
-              type="text" 
-              value={step} 
-              onChange={(e) => setStep(e.target.value)} 
-              placeholder="Step to Simulation"
-          />
+        <Toolbar style={{ justifyContent: 'center'}}>
+        <button 
+          className={`btn btn-outline-dark`} 
+          onClick={() => {
+            runSimulation();
+            setIsSimulating(!isSimulating);
+          }}
+          style={{ fontSize: '16px', padding: '10px 20px' }} 
+        >
+          <i className={`fas ${isSimulating ? 'fa-pause' : 'fa-play'}`}></i> 
+          <span style={{ marginLeft: '10px' }}>{isSimulating ? 'Pause' : 'Run'} Simulation</span>
+        </button>
+        <TextField
+          label="Step to Simulation"
+          type="text"
+          value={step}
+          onChange={(e) => setStep(e.target.value)}
+          variant="outlined"
+          size="small"
+          style={{ marginLeft: '20px', width: '200px' }} 
+        />
+      </Toolbar>
+
           <ReactFlowProvider>
           <div className={styles["reactflow-wrapper"]} ref={reactFlowWrapper}>
             <ReactFlow

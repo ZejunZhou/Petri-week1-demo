@@ -5,8 +5,11 @@ import { getSmartEdge } from '@tisoap/react-flow-smart-edge'
 import Avatar from '@mui/material/Avatar';
 import AvatarGroup from '@mui/material/AvatarGroup';
 import { deepOrange, green } from '@mui/material/colors';
+import { getEdgeParams } from './utils.js';
+import { useCallback } from 'react';
+import { useStore } from 'reactflow';
 
-const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, markerEnd, style}) => {
+const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, markerEnd, style, source, target}) => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(data.label);
@@ -44,6 +47,27 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
   console.log(labelData[4])
   //console.log(labelColor)
 
+  //floting edge section
+
+  const sourceNode = useStore(useCallback((store) => store.nodeInternals.get(source), [source]));
+  const targetNode = useStore(useCallback((store) => store.nodeInternals.get(target), [target]));
+
+  if (!sourceNode || !targetNode) {
+    return null;
+  }
+
+  const { sx, sy, tx, ty, sourcePos, targetPos } = getEdgeParams(sourceNode, targetNode);
+
+  const [edgePath_floating, edgeCenterX, edgeCenterY] = getBezierPath({
+    sourceX: sx,
+    sourceY: sy,
+    sourcePosition: sourcePos,
+    targetPosition: targetPos,
+    targetX: tx,
+    targetY: ty,
+  });
+
+
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -53,19 +77,19 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
     targetPosition,
   });
 
-  const nodes = useNodes()
+  // const nodes = useNodes()
 
-  const getSmartEdgeResponse = getSmartEdge({
-		sourcePosition,
-		targetPosition,
-		sourceX,
-		sourceY,
-		targetX,
-		targetY,
-		nodes
-	})
+  // const getSmartEdgeResponse = getSmartEdge({
+	// 	sourcePosition,
+	// 	targetPosition,
+	// 	sourceX,
+	// 	sourceY,
+	// 	targetX,
+	// 	targetY,
+	// 	nodes
+	// })
 
-  const { edgeCenterX, edgeCenterY, svgPathString } = getSmartEdgeResponse
+  // const { edgeCenterX, edgeCenterY, svgPathString } = getSmartEdgeResponse
 
   const toggleEditing = () => {
     setIsEditing(true);
@@ -87,7 +111,7 @@ const ArrowEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
       <path
         id={id}
         className="react-flow__edge-path"
-        d={svgPathString}
+        d={edgePath_floating}
         markerEnd={markerEnd}
         style={edgeStyle}
       />

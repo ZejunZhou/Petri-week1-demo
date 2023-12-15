@@ -8,7 +8,7 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./react-app:/app/react-app
+      - ./react-app:/react-app
     networks:
       - mynetwork
 
@@ -42,11 +42,30 @@ services:
     image: ngrok/ngrok
     ports:
       - 4040:4040
-    command: http react-frontend:3000
+    command:
+        - "start"
+        - "--all"
+        - "--config"
+        - "/etc/ngrok.yml"
     environment:
       - NGROK_AUTHTOKEN=2WMJ2Zs4liHTnWFzRRmwaq1i6f8_5K5VPMmFraecfNgxetAR9
+    volumes:
+      - ./ngrok/ngrok.yml:/etc/ngrok.yml
     networks:
       - mynetwork
+
+  ngrok-script:
+    image: alpine
+    volumes:
+      - ./scripts:/scripts
+      - ./react-app:/react-app 
+    depends_on:
+      - ngrok
+    command: >
+      /bin/sh -c "
+        apk add --no-cache curl jq &&
+        sh /scripts/get_ngrok_url.sh
+      "
         
   arangodb:
     image: arangodb/arangodb

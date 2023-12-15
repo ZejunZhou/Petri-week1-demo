@@ -5,6 +5,7 @@ from arango import ArangoClient
 import uuid
 import json
 from datetime import datetime
+import requests
 
 app = Flask(__name__)
 CORS(app)
