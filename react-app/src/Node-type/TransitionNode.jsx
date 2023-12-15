@@ -45,8 +45,9 @@ function TransitionNode({ data, id, isConnectable, selected}) {
       top: '-25px', 
       left: '50%',
       transform: 'translateX(-50%)', 
+      fontSize: "120%"
     }}>
-      {data.label}
+      <b>{data.label}</b>
     </span>
      <div style={{
       border: `${selected ? '1px solid black': '1px'}`,

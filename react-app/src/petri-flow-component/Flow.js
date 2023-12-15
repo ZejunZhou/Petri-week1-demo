@@ -788,7 +788,7 @@ const detectNodeIdFromEvent = (event) => {
           <LeftSidebar selectedNode={selectedNode} onDragStart={onDragStart}/>       
         </div>
 
-        <div className="flex-grow-1" style={{ height: '90vh' }}>
+        <div className="flex-grow-1" style={{ height: '90vh', paddingTop: '0.5rem' }}>
         <Toolbar />
           <button className={`btn btn-outline-dark`} onClick={runSimulation}>Run Simulation</button>
           <input 

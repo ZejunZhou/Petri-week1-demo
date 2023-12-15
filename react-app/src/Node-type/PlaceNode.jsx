@@ -47,8 +47,9 @@ function PlaceNode({ data, id, isConnectable, selected }) {
       top: '-30px', 
       left: '50%',
       transform: 'translateX(-50%)', 
+      fontSize: "120%"
     }}>
-      {data.label}
+      <b>{data.label}</b>
     </span>
     <div
       data-nodeid={id} 
